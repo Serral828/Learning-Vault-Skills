@@ -1,0 +1,12 @@
+# Local credentials and environment overrides must never enter this repository.
+.env
+.env.*
+auth.json
+credentials.json
+secrets.*
+
+# Generated dependencies and transient runtime output.
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
