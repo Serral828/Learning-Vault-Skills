@@ -51,8 +51,12 @@
         "status": "not_checked",
         "mapTitle": null,
         "mapPath": null,
-        "operation": null
+        "operation": null,
+        "targetSection": null,
+        "reorganizationSummary": null
       },
+      "conceptLinks": [],
+      "conceptRelationPlans": [],
       "evidenceSummary": [],
       "gaps": [],
       "persistenceApproved": true,
@@ -79,7 +83,7 @@
 
 - `activeQuestId` 只是当前焦点，不代表唯一 Quest。
 - Quest 状态只使用 `active`、`paused`、`completed`、`archived`。
-- Action 类型至少支持 `continue`、`extend`、`review`；辅助动作可以使用 `session-log`、`distill` 或 `topic-map`。
+- Action 类型至少支持 `continue`、`extend`、`review`；辅助动作可以使用 `session-log`、`distill`、`link-knowledge` 或 `topic-map`。
 - Action 状态只使用 `pending`、`in_progress`、`completed`、`cancelled`。
 - `inbox` 中每个动作都指向存在的 Quest。
 - 同一 Quest、同一目标的重复 `pending` 动作合并更新，不重复追加。
@@ -90,7 +94,9 @@
 - `applicationOutput.status` 只使用 `not_ready`、`pending`、`submitted`。它描述用户整合全部节点的实际成果，不是 Agent 的示例。旧数据中的 `revision_needed` 读取为已提交且有缺口，不要求补做。
 - `comprehensiveAssessment.status` 只使用 `not_ready`、`pending`、`passed`、`completed_with_gaps`。只有 `submitted` 的实际应用输出才能进入综合评估。旧数据中的 `failed` 读取为 `completed_with_gaps`，不恢复补测。
 - Quest 级 `distillStatus` 只使用 `not_ready`、`ready`、`proposed`、`written`、`declined`。它描述综合评估之后的知识产物状态，不放在单个节点中。
-- `topicMapPlan.status` 只使用 `not_checked`、`proposed`、`linked`、`declined`、`not_applicable`。`operation` 只使用 `create` 或 `update`；当地图不存在时必须保存 `create` 计划，不能把缺失地图当作无需处理。
+- `topicMapPlan.status` 只使用 `not_checked`、`proposed`、`linked`、`declined`、`not_applicable`。`operation` 只使用 `create` 或 `update`；当地图不存在时必须保存 `create` 计划，不能把缺失地图当作无需处理。`targetSection` 保存新概念的语义分组，`reorganizationSummary` 保存需要新建、重命名、移动或重排的地图结构；只是新增一个分类内条目时也要记录其组内位置。
+- `conceptLinks` 中每项包含 `noteTitle`、`notePath`、`role` 和 `status`；`status` 只使用 `proposed`、`linked`、`declined`。`role` 简述该概念如何参与解决 Quest，不保存没有正式笔记目标的占位项。
+- `conceptRelationPlans` 保存本次新建或实质更新 Concept Note 后发现的已有概念双向关系。每项至少包含 `newNotePath`、`existingNotePath`、`newSideRelation`、`existingSideRelation`、`reason` 和 `status`；`status` 只使用 `proposed`、`linked`、`declined`。没有直接关系时不造占位项，但在当次 Distill 提案中报告审计范围。
 
 ## 状态转换
 
@@ -105,11 +111,13 @@
 - 用户提交实际应用输出：记录类型、路径或摘要，并把状态改为 `submitted`；随后把 `comprehensiveAssessment.status` 改为 `pending`。
 - 综合评估达到完成标准：状态改为 `passed`；存在关键掌握缺口时改为 `completed_with_gaps`。两种状态都记录各节点证据与缺口，并把 Quest 级 `distillStatus` 改为 `ready`，不得自动要求修改输出或复评。
 - 用户在综合评估中明确要求“可以通过”“下一步”“继续生成笔记”或同义推进：直接改为 `passed`，`gaps` 写为空数组，`distillStatus` 改为 `ready`，不得继续追问。
-- `distill` 展示候选草稿时，同时完成 Topic Map 路由：Quest 级 `distillStatus` 改为 `proposed`；`topicMapPlan` 记录地图标题、路径和 `create`/`update`，状态改为 `proposed`。没有合适现有地图时仍记录创建计划。
-- 用户确认 Concept Note 写入后把 `distillStatus` 改为 `written`；确认地图新建或更新后把 `topicMapPlan.status` 改为 `linked`。地图被明确拒绝时改为 `declined`，只是推迟时保持 `proposed` 并创建 `topic-map` 动作。
+- `distill` 展示候选草稿时，同时完成已有 Concept Note 增量关系审计、Quest–Concept 双向链接和 Topic Map 路由：Quest 级 `distillStatus` 改为 `proposed`；成立的新旧概念关系合并进 `conceptRelationPlans`；`conceptLinks` 新增或合并对应概念的 `proposed` 项；`topicMapPlan` 记录地图标题、路径、`create`/`update`、目标语义分组和结构调整摘要，状态改为 `proposed`。
+- 用户确认新 Concept Note 与已有 Concept Note 的成对更新并回读验证后，把相应 `conceptRelationPlans.status` 改为 `linked`；明确拒绝时改为 `declined`；只是推迟时保持 `proposed`，并创建包含两侧文件、链接文本和理由的 `link-knowledge` 动作。
+- 用户确认 Concept Note 与 Quest 双向更新并回读验证后，把对应 `conceptLinks.status` 改为 `linked`；明确拒绝时改为 `declined`；只是推迟时保持 `proposed` 并创建 `link-knowledge` 动作。
+- 用户确认 Concept Note 写入后把 `distillStatus` 改为 `written`；确认地图新建或更新后，回读验证新概念位于保存的 `targetSection`、必要的 `reorganizationSummary` 已落实、原有链接未丢失且不存在空分组或笼统平铺清单，再把 `topicMapPlan.status` 改为 `linked`。地图被明确拒绝时改为 `declined`，只是推迟时保持 `proposed` 并创建包含目标分组和重排摘要的 `topic-map` 动作。
 - 用户明确拒绝 Concept Note 晋升时把 `distillStatus` 改为 `declined`，并把 `topicMapPlan.status` 改为 `not_applicable`。
-- Quest 只有在综合评估为 `passed` 或 `completed_with_gaps`，且满足“`distillStatus` 为 `written` 并且 Topic Map 为 `linked` 或 `declined`”或“`distillStatus` 为 `declined` 且 Topic Map 为 `not_applicable`”时才可标记 `completed`。
-- 恢复 Quest 时，`clarifying` 必须先恢复疑问窗口，不得自动转成评估；只有用户此前已经明确选择评估的 `awaiting_assessment` 和 `comprehensiveAssessment: pending` 才是评估待办。`assessed_with_gaps`、`completed_with_gaps` 以及旧的 `failed` 都不生成补测。随后按实际应用输出 → Distill → Topic Map 的顺序处理。
+- Quest 只有在综合评估为 `passed` 或 `completed_with_gaps`，且满足以下之一时才可标记 `completed`：一是 `distillStatus` 为 `written`、`conceptLinks` 非空且不存在 `proposed`、`conceptRelationPlans` 不存在 `proposed`、Topic Map 为 `linked` 或 `declined`；二是 `distillStatus` 为 `declined` 且 Topic Map 为 `not_applicable`。Concept Note 已写入但 `conceptLinks` 为空时必须创建 `link-knowledge` 审计动作；存在未完成的 `conceptRelationPlans` 时也必须保留对应动作，不能视为完成。
+- 恢复 Quest 时，`clarifying` 必须先恢复疑问窗口，不得自动转成评估；只有用户此前已经明确选择评估的 `awaiting_assessment` 和 `comprehensiveAssessment: pending` 才是评估待办。`assessed_with_gaps`、`completed_with_gaps` 以及旧的 `failed` 都不生成补测。随后按实际应用输出 → Distill → 新旧 Concept Note 双向关系 → Quest–Concept 双向链接 → Topic Map 的顺序处理。
 - `extend`：父 Quest 保持 `completed`，创建具有 `parentQuestId` 的新 Quest。
 - `review`：动作改为 `in_progress`，复习结束后写回结果摘要并标记 `completed`；下一次复习时间由 `.learning/review-queue.json` 管理。
 - `pause`：Quest 改为 `paused`，不改变其 `pending` 动作。

@@ -1,6 +1,6 @@
 # 领域标签注册表
 
-领域标签用于让 Obsidian 关系图谱按宽泛知识领域分组和着色。它只回答“这篇笔记主要属于哪类知识”，不替代 `topics`、Topic Map、文件夹或语义链接。Topic Map 是导航节点，统一使用独立的 `map` 标签，不使用 `domain/...`。
+领域标签用于让 Obsidian 关系图谱按宽泛知识领域分组和着色。它只回答“这篇知识笔记主要属于哪类知识”，不替代 `topics`、Topic Map、文件夹或语义链接。Learning Quest 与 Topic Map 是结构节点，分别统一使用 `quest` 和 `map`，不使用 `domain/...`。
 
 ## 写入格式
 
@@ -18,21 +18,28 @@ tags:
   - map
 ```
 
-- 除 Topic Map 外，每篇正式知识笔记必须有一个主领域。
+Learning Quest 固定写为：
+
+```yaml
+tags:
+  - quest
+```
+
+- 除 Learning Quest 和 Topic Map 外，每篇正式知识笔记必须有一个主领域。
 - 只有核心命题确实横跨两个领域时才增加第二个；最多两个。
+- `01-学习问题/` 只保留 `quest`，不叠加领域标签；它通过“涉及概念”链接的 Concept Note 承担领域分类。
 - Topic Map 只保留 `map`，不叠加领域标签；它链接的 Concept Note 自己承担领域分类。
-- 非 Topic Map 笔记保留已有的无关标签，不静默覆盖整个 `tags` 列表；Topic Map 的 `tags` 则统一为只包含 `map`。
+- Learning Quest 的 `tags` 统一为只包含 `quest`，Topic Map 的 `tags` 统一为只包含 `map`；其他正式知识保留已有无关标签，不静默覆盖整个列表。
 - 细粒度主题继续写入 `topics` 或正文链接，不创建 `domain/machine-learning`、`domain/react`、`domain/stm32` 这类窄标签。
 - 来源笔记按内容所属领域分类，不按“书籍”“视频”“网页”等媒介分类。
 
-这套规则适用于 Agent 新建或更新的长期正式知识：
+领域标签规则适用于 Agent 新建或更新的以下长期正式知识：
 
-- `01-学习问题/`
 - `02-概念/`
 - `04-来源/`
 - `05-实践与产出/`
 
-`03-主题地图/` 使用统一的 `map` 标签，作为上述领域标签规则的明确例外。
+`01-学习问题/` 使用统一的 `quest`，`03-主题地图/` 使用统一的 `map`，二者都是上述领域标签规则的明确例外。
 
 它不要求给 `00-原始笔记/`、`90-学习会话/`、`98-代码实验/`、`.learning/`、`.trash/` 中的临时或过程文件添加领域标签。
 
@@ -63,12 +70,14 @@ tags:
 2. 优先复用注册表中足够宽泛的标签，不按课程名、框架名、设备名或单个概念造标签。
 3. 真正跨领域时最多使用两个标签，并把最能解释核心问题的标签列在前面。
 4. 不使用 `domain/other`、`domain/misc` 等兜底标签。
-5. Topic Map 无论主题是什么都使用 `map`，不从注册表选择领域标签。
+5. Learning Quest 无论主题是什么都使用 `quest`，不从注册表选择领域标签。
+6. Topic Map 无论主题是什么都使用 `map`，不从注册表选择领域标签。
 
 示例：
 
 | 笔记 | 领域标签 | 原因 |
 | --- | --- | --- |
+| 用 KNN 识别手写数字（Learning Quest） | `quest` | 学习问题统一作为 Quest 节点，不按 AI 继续细分 |
 | 泛化与过拟合 | `domain/ai` | 核心问题是模型学习与泛化；不因涉及概率就自动加 `domain/math` |
 | 边缘设备上的目标检测 | `domain/ai`、`domain/hardware` | 模型能力与硬件约束共同构成核心问题 |
 | React 服务端渲染 | `domain/web` | 框架名属于细粒度主题，不单独创建领域 |
@@ -94,6 +103,7 @@ Obsidian 的颜色由 Graph view 的 **Groups** 设置，而不是由 Markdown �
 tag:#domain/ai
 tag:#domain/web
 tag:#domain/hardware
+tag:#quest
 tag:#map
 ```
 
