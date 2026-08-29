@@ -58,6 +58,7 @@ Agent 会先确认你最终需要具备什么能力、你已经会什么，再�
 | 你现在想做什么 | 使用命令 | Skill |
 | --- | --- | --- |
 | 从一个真实问题开始学习 | `/skill:teach <目标>` | `teach` |
+| 查看、继续、延伸或复习某个学习项目 | `/skill:learning-hub <动作> <Quest ID>` | `learning-hub` |
 | 检查自己是否真的会用 | `/skill:assess <能力>` | `assess` |
 | 核查事实、公式、定义或来源 | `/skill:verify <断言>` | `verify` |
 | 把已证明掌握的理解整理成正式笔记 | `/skill:distill <概念>` | `distill` |
@@ -66,7 +67,7 @@ Agent 会先确认你最终需要具备什么能力、你已经会什么，再�
 | 根据遗忘和历史错误安排复习 | `/skill:review <可选范围>` | `review` |
 | 永久清空 Vault 的 `.trash/` | `/skill:purge-trash` | `purge-trash` |
 
-`teach` 是学习主流程的总控入口。通常你只需要调用一次 `teach`，然后继续回答和操作；它会在需要时自动转入 `verify`、`assess` 和 `distill`。
+`teach` 是一个 Quest 内的教学总控入口。开始时，`learning-hub` 会为新目标创建或复用稳定 Quest ID；教学过程中 `teach` 按需转入 `verify`、`assess` 和 `distill`；结束时再由 `learning-hub` 保存状态并给出可在未来执行的“继续/延伸”和“复习”动作。
 
 表中的其他命令是独立入口，不是每次学习都必须手工执行。例如：
 
@@ -114,24 +115,37 @@ Agent 会先确认你最终需要具备什么能力、你已经会什么，再�
 
 `distill` 会先查重，再展示目标路径和完整草稿。你确认后才会写入 `02-概念/`；“自动编排”不等于未经确认自动写文件。
 
-新概念晋升后，Agent 可以继续使用 `link-knowledge` 提议把它连接到 PID、执行器饱和和抗积分饱和方案，修改链接前仍会征求确认。
-
-过一段时间后，你可以主动开启一次新复习：
+新概念晋升后，Agent 可以继续使用 `link-knowledge` 提议把它连接到 PID、执行器饱和和抗积分饱和方案，修改链接前仍会征求确认。到达本次检查点后，`learning-hub` 会保存状态并给出稳定 ID，例如：
 
 ```text
-/skill:review 复习近期学过但还没有在项目中使用的控制概念
+学习项目：两轮平衡车反馈控制
+Quest ID：LQ-20260829-A7F2
+状态：paused
+当前位置：已完成“积分饱和”
+
+以后可执行：
+1. 继续当前路径
+   /skill:learning-hub continue LQ-20260829-A7F2
+2. 复习已掌握内容
+   /skill:learning-hub review LQ-20260829-A7F2
+
+现在不需要选择，状态已经保存。
 ```
 
 完整循环是：
 
 ```mermaid
 flowchart LR
-    Q[一次调用 teach] --> T[逐节点教学]
+    Q[学习目标] --> H[learning-hub 分配 Quest ID]
+    H --> T[teach 逐节点教学]
     T --> V[按需 verify]
     V --> A[按需 assess]
     A --> D[达标后 distill]
     D --> L[link-knowledge 连接]
-    L --> R[review 复习]
+    L --> H2[learning-hub 保存状态]
+    H2 --> C[继续或延伸]
+    H2 --> R[review 复习]
+    C --> T
     R --> A
 ```
 
@@ -177,7 +191,24 @@ flowchart LR
 
 存在任何“未处理”项时，原始输入必须留在原位。
 
-## 8 个 skills 分别负责什么
+## 9 个 skills 分别负责什么
+
+### `learning-hub`：学习项目与跨会话动作中心
+
+- 为每个 Learning Quest 创建稳定 ID，同一目标跨会话复用，不重复创建；
+- 保存多个 Quest 的状态、父子关系、能力证据和待办；
+- 提供 `list`、`show`、`continue`、`extend`、`review`、`pause` 和 `archive`；
+- 在教学检查点后给出最多两个未来动作：继续/延伸，以及复习；
+- 把具体工作路由给 `teach` 或 `review`，自己不负责讲课和评估。
+
+示例：
+
+```text
+/skill:learning-hub list
+/skill:learning-hub continue LQ-20260829-A7F2
+/skill:learning-hub extend LQ-20260829-A7F2
+/skill:learning-hub review LQ-20260829-A7F2
+```
 
 ### `teach`：教学主流程
 
@@ -293,6 +324,33 @@ flowchart LR
 
 文件夹表达内容类型和生命周期；Markdown 链接表达前置、解释、因果、对比和应用关系。
 
+## Obsidian 图谱颜色与领域标签
+
+Agent 新建或更新长期正式知识时，会在 YAML 中加入宽泛领域标签：
+
+```yaml
+tags:
+  - domain/ai
+```
+
+领域标签回答“这篇笔记主要属于哪类知识”，不替代更细的 `topics`、Topic Map 或正文链接。每篇正式笔记使用一个主领域；只有核心问题确实跨领域时才增加第二个，最多两个。例如：
+
+- “泛化与过拟合”使用 `domain/ai`，不会因为涉及概率就自动堆上 `domain/math`；
+- “边缘设备上的目标检测”可以同时使用 `domain/ai` 和 `domain/hardware`；
+- React、STM32、TF-IDF 等具体技术留在 `topics` 或链接中，不创建同名领域标签。
+
+当前注册表提供 AI、软件、Web、硬件、数据、数学、自然科学、社会科学、人文、商业、设计、艺术、健康和教育等宽泛起始领域，但它不是封闭分类。以后出现不能自然归类的新学科时，Agent 会提议一个新的宽泛标签并说明边界；你可以在批准当次笔记计划时一并批准扩展注册表。系统不会使用 `domain/other` 强行兜底，也不会根据当前 Vault 内容限制未来领域。完整规则见 [领域标签注册表](docs/domain-tags.md)。
+
+要在 Obsidian 关系图谱中显示颜色，打开 Graph view 的 **Groups**，为实际使用到的标签添加查询并选择颜色：
+
+```text
+tag:#domain/ai
+tag:#domain/web
+tag:#domain/hardware
+```
+
+颜色属于 Obsidian 的 Graph Group 配置，不存储在 Markdown 标签里；本项目不会擅自修改你的 `.obsidian/` 设置。新增领域后，只需再增加对应 Group。查询语法和分组方式可参考 [Obsidian Graph view](https://obsidian.md/help/plugins/graph)、[Obsidian Search](https://obsidian.md/help/plugins/search) 与 [Obsidian Tags](https://obsidian.md/help/tags)。
+
 ## 本地状态与配置
 
 Skills 会在存在时读取：
@@ -300,6 +358,7 @@ Skills 会在存在时读取：
 - `.learning/learner-profile.json`：已有能力、常见困难和交互偏好；
 - `.learning/mastery-state.json`：掌握证据和最近验证状态；
 - `.learning/review-queue.json`：待重新提取或迁移的内容；
+- `.learning/learning-progress.json`：由 `learning-hub` 维护的 Quest ID、检查点、父子关系和动作注册表；
 - `.learning/tooling.json`：代码实验目录、编辑器命令和交接行为；
 - `.pi/CONTEXT.md`：本地领域术语与工作约定。
 
@@ -367,18 +426,43 @@ pi.cmd
 
 ### 使用 `teach` 时，需要自己依次调用其他 skills 吗？
 
-不需要。`teach` 是总控入口，会在同一段多轮学习过程中按需使用：
+不需要。`teach` 负责一个 Quest 内的教学编排，`learning-hub` 负责 Quest ID 和跨会话状态；它们会在同一段多轮学习过程中按需使用：
 
 ```text
 verify → 核查关键事实
 assess → 获得掌握证据
 distill → 达标后提议生成正式笔记
 link-knowledge → 新笔记晋升后提议建立关系
+learning-hub → 保存 Quest 状态和未来动作
 ```
 
 你只需要继续参与教学、回答评估任务，并在写入正式知识时确认草稿。单独调用这些 skills，是为了让你能够直接进入某个阶段，而不是完整学习流程的必需步骤。
 
 `review` 通常发生在未来的另一次会话，`integrate-learning` 则是另一条处理已有原始笔记的独立工作流。
+
+### 结束时没有时间处理后续建议怎么办？
+
+确认一个需要持久化的 Learning Quest 时，可以一次性允许 `learning-hub` 自动更新该 Quest 在 `.learning/learning-progress.json` 中的非正式状态。之后 Agent 会在完成节点、获得能力证据或暂停时保存最小检查点，而不是把后续选择只留在聊天末尾。
+
+你当下不需要从菜单中选择。下次从 Vault 根目录启动 Pi 后直接输入：
+
+```text
+/skill:learning-hub list
+```
+
+Agent 会列出所有未归档 Quest 的 ID、当前位置和可执行动作。选择某个 Quest 后，它会读取检查点，简要说明上次停在哪里、已经证明什么以及准备做什么。开始新的学习不会覆盖旧事项；新 Quest 只会成为当前焦点，旧 Quest 及其动作继续保留。
+
+也可以直接指定：
+
+```text
+/skill:learning-hub continue <Quest ID 或标题>
+/skill:learning-hub extend <Quest ID 或标题>
+/skill:learning-hub review <Quest ID 或标题>
+```
+
+开始新学习时，Agent 只会低干扰地提醒还有多少旧 Quest 包含待办，不会强迫先处理它们；旧 Quest 也不会因为切换学习方向而自动删除。
+
+Quest 注册表和动作是 `.learning/` 中的非正式状态，不等于 Session Log，也不等于正式知识。一次授权自动保存某个 Quest 的进度，不会授权 Agent 静默创建 Concept Note、Topic Map 或其他正式笔记。
 
 ### `/skill:...` 没有出现或无法识别
 
