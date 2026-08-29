@@ -1,6 +1,6 @@
 # Learning Vault Skills
 
-一套用于 **Pi Agent + Markdown 知识库** 的学习技能：从真实问题出发，经过教学、事实核查和情境评估，再把真正理解的内容沉淀为可连接、可复习的知识。
+一套面向 **Markdown / Obsidian 知识库** 的学习 Skills：从真实问题出发，经过教学、事实核查和情境评估，再把真正理解的内容沉淀为可连接、可复习的知识。
 
 > 它不是“让 AI 批量替你写笔记”，而是帮助你把“看过”变成“能够解释、应用和迁移”。
 
@@ -36,14 +36,14 @@
 }
 ```
 
-### 2. 从 Windows PowerShell 启动 Pi
+### 2. 从 Windows PowerShell 在 Vault 根目录启动
 
 ```powershell
 Set-Location -LiteralPath 'E:\Document\Vault'
 pi.cmd
 ```
 
-不要从 WSL 或 `.pi/` 子目录启动。Pi 进程应直接运行在 Windows 中，并以 Vault 为当前目录。项目配置会把模型使用的命令工具设置为 Windows 原生 PowerShell，而不是 Bash。
+不要从 WSL 或 `.pi/` 子目录启动。Agent 进程应直接运行在 Windows 中，并以 Vault 为当前目录。项目配置会把命令工具设置为 Windows 原生 PowerShell，而不是 Bash。
 
 ### 3. 发出第一条学习请求
 
@@ -444,7 +444,7 @@ learning-hub → 保存 Quest 状态和未来动作
 
 确认一个需要持久化的 Learning Quest 时，可以一次性允许 `learning-hub` 自动更新该 Quest 在 `.learning/learning-progress.json` 中的非正式状态。之后 Agent 会在完成节点、获得能力证据或暂停时保存最小检查点，而不是把后续选择只留在聊天末尾。
 
-你当下不需要从菜单中选择。下次从 Vault 根目录启动 Pi 后直接输入：
+你当下不需要从菜单中选择。下次从 Vault 根目录开始新会话后直接输入：
 
 ```text
 /skill:learning-hub list
@@ -471,7 +471,7 @@ Quest 注册表和动作是 `.learning/` 中的非正式状态，不等于 Sessi
 1. 当前启动目录是不是 Vault 根目录；
 2. skills 是否位于 `<Vault>/.pi/skills/<name>/SKILL.md`；
 3. `.pi/settings.json` 是否设置了 `enableSkillCommands: true`；
-4. 修改配置后是否重新启动了 Pi。
+4. 修改配置后是否重新启动了当前 Agent 进程。
 
 ### 怎样确认 Agent 正在使用 Windows 原生 PowerShell？
 
