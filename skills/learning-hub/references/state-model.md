@@ -29,9 +29,10 @@
       "currentNode": "过拟合与泛化",
       "nodeStates": {
         "过拟合与泛化": {
-          "status": "awaiting_assessment",
+          "status": "clarifying",
           "requiredEvidenceLevel": 2,
-          "evidenceLevel": null
+          "evidenceLevel": null,
+          "clarificationInsights": []
         }
       },
       "applicationOutput": {
@@ -84,7 +85,8 @@
 - 同一 Quest、同一目标的重复 `pending` 动作合并更新，不重复追加。
 - `completed`、`cancelled` 和 `archived` 项保留历史，不默认删除。
 - `nodeStates` 可以在旧状态中缺省，并在下一次教学检查点按需补充；不得因缺少该字段重建整个 Quest。
-- 节点状态只使用 `teaching`、`awaiting_assessment`、`validated`、`assessed_with_gaps`。每个节点必须有一次独立的 `assess` 记录；证据达到 `requiredEvidenceLevel` 时进入 `validated`，否则进入 `assessed_with_gaps`。两者都表示评估已经完成，不创建补测待办。
+- `nodeStates.<节点>.clarificationInsights` 保存对正式笔记有长期价值的疑问解答。每项至少包含 `question`、`resolution` 和 `noteUse`，可选 `exampleOrBoundary`；不保存寒暄、流程选择或完整聊天转录。
+- 节点状态只使用 `teaching`、`clarifying`、`awaiting_assessment`、`validated`、`assessed_with_gaps`。讲解和实例完成后进入 `clarifying`，先处理用户疑问；只有用户明确要求评估时才进入 `awaiting_assessment`。用户直接放行也视为一次完成记录。证据达到 `requiredEvidenceLevel` 时进入 `validated`，否则进入 `assessed_with_gaps`。
 - `applicationOutput.status` 只使用 `not_ready`、`pending`、`submitted`。它描述用户整合全部节点的实际成果，不是 Agent 的示例。旧数据中的 `revision_needed` 读取为已提交且有缺口，不要求补做。
 - `comprehensiveAssessment.status` 只使用 `not_ready`、`pending`、`passed`、`completed_with_gaps`。只有 `submitted` 的实际应用输出才能进入综合评估。旧数据中的 `failed` 读取为 `completed_with_gaps`，不恢复补测。
 - Quest 级 `distillStatus` 只使用 `not_ready`、`ready`、`proposed`、`written`、`declined`。它描述综合评估之后的知识产物状态，不放在单个节点中。
@@ -94,16 +96,20 @@
 
 - 新 Quest 获得确认后：新增为 `active`，原 `active` Quest 如未完成则改为 `paused`。
 - `continue`：目标 Quest 改为 `active`，动作改为 `in_progress`；教学完成后根据结果标为 `completed` 或重新生成后续动作。
-- 节点讲解与领域实例完成：节点改为 `awaiting_assessment`，不能更新 `lastCompletedNode`。
+- 节点讲解与领域实例完成：节点改为 `clarifying`，明确开放疑问窗口，不能立即改为 `awaiting_assessment`，也不能更新 `lastCompletedNode`。
+- 用户在 `clarifying` 阶段提问：保持 `clarifying`，回答后继续等待；用户明确说“开始评估”时才改为 `awaiting_assessment`。
+- 每次解决实质性疑问后：把精炼后的问题、解答、新增例子或边界及 `noteUse` 合并进当前节点的 `clarificationInsights`；同一问题追加完善，不重复堆叠。该字段必须随 Quest 传给 `distill`。
 - 节点完成一次 `assess`：达到要求等级时改为 `validated`，否则改为 `assessed_with_gaps`；两者都写入证据等级、摘要和缺口，并进入下一节点，不补测。
+- 用户在节点评估中明确说“可以通过”“下一步”“继续”或同义推进表达：节点直接改为 `validated`，`evidenceLevel` 写入 `requiredEvidenceLevel`，`gaps` 写为空数组；不得创建追问或补测动作。
 - 所有必需节点均为 `validated` 或 `assessed_with_gaps`：`applicationOutput.status` 改为 `pending`，进入实际应用输出阶段。
 - 用户提交实际应用输出：记录类型、路径或摘要，并把状态改为 `submitted`；随后把 `comprehensiveAssessment.status` 改为 `pending`。
 - 综合评估达到完成标准：状态改为 `passed`；存在关键掌握缺口时改为 `completed_with_gaps`。两种状态都记录各节点证据与缺口，并把 Quest 级 `distillStatus` 改为 `ready`，不得自动要求修改输出或复评。
+- 用户在综合评估中明确要求“可以通过”“下一步”“继续生成笔记”或同义推进：直接改为 `passed`，`gaps` 写为空数组，`distillStatus` 改为 `ready`，不得继续追问。
 - `distill` 展示候选草稿时，同时完成 Topic Map 路由：Quest 级 `distillStatus` 改为 `proposed`；`topicMapPlan` 记录地图标题、路径和 `create`/`update`，状态改为 `proposed`。没有合适现有地图时仍记录创建计划。
 - 用户确认 Concept Note 写入后把 `distillStatus` 改为 `written`；确认地图新建或更新后把 `topicMapPlan.status` 改为 `linked`。地图被明确拒绝时改为 `declined`，只是推迟时保持 `proposed` 并创建 `topic-map` 动作。
 - 用户明确拒绝 Concept Note 晋升时把 `distillStatus` 改为 `declined`，并把 `topicMapPlan.status` 改为 `not_applicable`。
 - Quest 只有在综合评估为 `passed` 或 `completed_with_gaps`，且满足“`distillStatus` 为 `written` 并且 Topic Map 为 `linked` 或 `declined`”或“`distillStatus` 为 `declined` 且 Topic Map 为 `not_applicable`”时才可标记 `completed`。
-- 恢复 Quest 时，只把尚无首次结果的 `awaiting_assessment` 和 `comprehensiveAssessment: pending` 当作评估待办；`assessed_with_gaps`、`completed_with_gaps` 以及旧的 `failed` 都不生成补测。随后按实际应用输出 → Distill → Topic Map 的顺序处理。
+- 恢复 Quest 时，`clarifying` 必须先恢复疑问窗口，不得自动转成评估；只有用户此前已经明确选择评估的 `awaiting_assessment` 和 `comprehensiveAssessment: pending` 才是评估待办。`assessed_with_gaps`、`completed_with_gaps` 以及旧的 `failed` 都不生成补测。随后按实际应用输出 → Distill → Topic Map 的顺序处理。
 - `extend`：父 Quest 保持 `completed`，创建具有 `parentQuestId` 的新 Quest。
 - `review`：动作改为 `in_progress`，复习结束后写回结果摘要并标记 `completed`；下一次复习时间由 `.learning/review-queue.json` 管理。
 - `pause`：Quest 改为 `paused`，不改变其 `pending` 动作。

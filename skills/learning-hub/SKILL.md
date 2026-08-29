@@ -55,14 +55,15 @@ description: 管理跨会话 Learning Quest ID、状态和下一动作，并在�
 
 用于尚未完成当前收尾或完成标准的 Quest。读取节点状态和掌握证据，简短说明上次停在哪里，并按以下优先级恢复：
 
-1. 当前节点为 `awaiting_assessment`：交给 `teach` 调用 `assess`，先完成评估。
-2. 全部节点已评估但 `applicationOutput.status` 为 `pending`：恢复实际应用输出任务。
-3. 已提交输出但 `comprehensiveAssessment.status` 为 `pending`：交给 `teach` 调用 `assess` 完成首次综合评估。旧数据中的 `failed` 视为已完成且有缺口，不恢复补测。
-4. Quest 级 `distillStatus` 为 `ready` 或 `proposed`：调用 `distill` 展示或恢复候选草稿。
-5. Concept Note 已写入但 `topicMapPlan.status` 为 `proposed`：交给 `distill` 或 `link-knowledge` 恢复 Topic Map 新建或更新提案，不能因为地图原先不存在就跳过。
-6. 上述收尾都已完成：再由 `teach` 从最近未完成的新节点继续。
+1. 当前节点为 `clarifying`：交给 `teach` 恢复该节点的疑问窗口，不能自动开始评估。
+2. 当前节点为 `awaiting_assessment`：说明用户此前已经明确选择评估，再交给 `teach` 调用 `assess`。
+3. 全部节点已评估但 `applicationOutput.status` 为 `pending`：恢复实际应用输出任务。
+4. 已提交输出但 `comprehensiveAssessment.status` 为 `pending`：交给 `teach` 调用 `assess` 完成首次综合评估。旧数据中的 `failed` 视为已完成且有缺口，不恢复补测。
+5. Quest 级 `distillStatus` 为 `ready` 或 `proposed`：调用 `distill` 展示或恢复候选草稿。
+6. Concept Note 已写入但 `topicMapPlan.status` 为 `proposed`：交给 `distill` 或 `link-knowledge` 恢复 Topic Map 新建或更新提案，不能因为地图原先不存在就跳过。
+7. 上述收尾都已完成：再由 `teach` 从最近未完成的新节点继续。
 
-不要跳过待评估或待提炼状态，也不要重新教授已有充分证据的内容。
+不要跳过待澄清、用户已选择的待评估或待提炼状态，也不要重新教授已有充分证据的内容。
 
 ### `extend`
 
@@ -89,6 +90,7 @@ description: 管理跨会话 Learning Quest ID、状态和下一动作，并在�
 
 - Quest ID；
 - 最近完成和当前节点；
+- 每个节点的 `clarificationInsights`，包括用户的实质性疑问、最终解答、新增例子或边界以及建议写入笔记的位置；
 - 通过 `assess` 获得的能力证据；
 - 每个已教授节点的状态、要求证据等级和实际证据等级；
 - 实际应用输出的类型、位置或摘要及其状态；
@@ -101,7 +103,7 @@ description: 管理跨会话 Learning Quest ID、状态和下一动作，并在�
 
 本 Skill 合并写入状态，并按优先级生成最多两个主要未来动作：
 
-1. **完成当前收尾**：按“待首次节点评估 → 待实际应用输出 → 待首次综合评估 → 待 Distill → 待 Topic Map”的顺序，为最早未执行阶段创建 `continue`、`distill` 或 `topic-map` 动作。评估已有结果但带缺口时不创建补测动作。
+1. **完成当前收尾**：按“待疑问澄清 → 待首次节点评估 → 待实际应用输出 → 待首次综合评估 → 待 Distill → 待 Topic Map”的顺序，为最早未执行阶段创建 `continue`、`distill` 或 `topic-map` 动作。评估已有结果但带缺口时不创建补测动作。
 2. **继续或延伸**：上述教学与晋升阶段都已完成时，Quest 未完成使用 `continue`；已完成且确有相邻目标时使用 `extend`。
 3. **复习**：还有名额且存在掌握证据时才创建 `review` 动作。
 
