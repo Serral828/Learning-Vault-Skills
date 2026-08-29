@@ -10,7 +10,7 @@ description: 管理跨会话 Learning Quest ID、状态和下一动作，并在�
 ## 职责边界
 
 - 本 Skill 独占 `.learning/learning-progress.json` 的结构管理和合并写入。
-- `teach` 负责教学，在每个规划节点边界调用 `assess`；全部节点通过后组织实际应用输出和综合评估，只有综合评估通过才主动调用 `distill`。
+- `teach` 负责教学，在每个规划节点边界调用一次 `assess`；全部节点评估后组织实际应用输出和一次综合评估，评估结束即主动调用 `distill`，不因掌握缺口安排补测。
 - `review` 负责主动回忆、迁移评估和复习证据。
 - 本 Skill 只解析 Quest、保存状态、管理动作并路由到上述 Skill，不替代它们。
 - 不把状态文件当成正式知识，也不借状态授权写入 Concept Note、Topic Map、来源、实践产出或完整 Session Log。
@@ -56,8 +56,8 @@ description: 管理跨会话 Learning Quest ID、状态和下一动作，并在�
 用于尚未完成当前收尾或完成标准的 Quest。读取节点状态和掌握证据，简短说明上次停在哪里，并按以下优先级恢复：
 
 1. 当前节点为 `awaiting_assessment`：交给 `teach` 调用 `assess`，先完成评估。
-2. 全部节点通过但 `applicationOutput.status` 为 `pending`：恢复实际应用输出任务。
-3. 已提交输出但 `comprehensiveAssessment.status` 为 `pending` 或 `failed`：交给 `teach` 调用 `assess` 完成综合评估或针对缺口修订。
+2. 全部节点已评估但 `applicationOutput.status` 为 `pending`：恢复实际应用输出任务。
+3. 已提交输出但 `comprehensiveAssessment.status` 为 `pending`：交给 `teach` 调用 `assess` 完成首次综合评估。旧数据中的 `failed` 视为已完成且有缺口，不恢复补测。
 4. Quest 级 `distillStatus` 为 `ready` 或 `proposed`：调用 `distill` 展示或恢复候选草稿。
 5. Concept Note 已写入但 `topicMapPlan.status` 为 `proposed`：交给 `distill` 或 `link-knowledge` 恢复 Topic Map 新建或更新提案，不能因为地图原先不存在就跳过。
 6. 上述收尾都已完成：再由 `teach` 从最近未完成的新节点继续。
@@ -81,7 +81,7 @@ description: 管理跨会话 Learning Quest ID、状态和下一动作，并在�
 - `pause` 保留检查点和 `pending` 动作，允许以后恢复。
 - `archive` 表示不再主动提醒，但保留历史记录；不得物理删除 Quest、动作或正式笔记。
 
-所有节点分别验证并不等于 Quest 已完成。只有实际应用输出已经提交、综合评估 `passed`，Distill 提案已经由用户写入或明确拒绝，并且新 Concept Note 的 Topic Map 计划已经链接、明确拒绝或因未晋升而不适用后，才可把 Quest 标为 `completed`；草稿或地图提案仍待确认时保持 `active` 或 `paused`。
+所有节点分别完成一次评估并不等于 Quest 已完成。只有实际应用输出已经提交、综合评估为 `passed` 或 `completed_with_gaps`，Distill 提案已经由用户写入或明确拒绝，并且新 Concept Note 的 Topic Map 计划已经链接、明确拒绝或因未晋升而不适用后，才可把 Quest 标为 `completed`；草稿或地图提案仍待确认时保持 `active` 或 `paused`。
 
 ## 接收教学结果
 
@@ -101,7 +101,7 @@ description: 管理跨会话 Learning Quest ID、状态和下一动作，并在�
 
 本 Skill 合并写入状态，并按优先级生成最多两个主要未来动作：
 
-1. **完成当前收尾**：按“待节点评估 → 待实际应用输出 → 待综合评估 → 待 Distill → 待 Topic Map”的顺序，为最早未完成阶段创建 `continue`、`distill` 或 `topic-map` 动作。任何前序阶段都优先于新节点和主题延伸。
+1. **完成当前收尾**：按“待首次节点评估 → 待实际应用输出 → 待首次综合评估 → 待 Distill → 待 Topic Map”的顺序，为最早未执行阶段创建 `continue`、`distill` 或 `topic-map` 动作。评估已有结果但带缺口时不创建补测动作。
 2. **继续或延伸**：上述教学与晋升阶段都已完成时，Quest 未完成使用 `continue`；已完成且确有相邻目标时使用 `extend`。
 3. **复习**：还有名额且存在掌握证据时才创建 `review` 动作。
 
