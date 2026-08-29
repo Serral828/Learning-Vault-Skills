@@ -59,7 +59,8 @@ description: 管理跨会话 Learning Quest ID、状态和下一动作，并在�
 2. 全部节点通过但 `applicationOutput.status` 为 `pending`：恢复实际应用输出任务。
 3. 已提交输出但 `comprehensiveAssessment.status` 为 `pending` 或 `failed`：交给 `teach` 调用 `assess` 完成综合评估或针对缺口修订。
 4. Quest 级 `distillStatus` 为 `ready` 或 `proposed`：调用 `distill` 展示或恢复候选草稿。
-5. 上述收尾都已完成：再由 `teach` 从最近未完成的新节点继续。
+5. Concept Note 已写入但 `topicMapPlan.status` 为 `proposed`：交给 `distill` 或 `link-knowledge` 恢复 Topic Map 新建或更新提案，不能因为地图原先不存在就跳过。
+6. 上述收尾都已完成：再由 `teach` 从最近未完成的新节点继续。
 
 不要跳过待评估或待提炼状态，也不要重新教授已有充分证据的内容。
 
@@ -80,7 +81,7 @@ description: 管理跨会话 Learning Quest ID、状态和下一动作，并在�
 - `pause` 保留检查点和 `pending` 动作，允许以后恢复。
 - `archive` 表示不再主动提醒，但保留历史记录；不得物理删除 Quest、动作或正式笔记。
 
-所有节点分别验证并不等于 Quest 已完成。只有实际应用输出已经提交、综合评估 `passed`，并且 Distill 提案已经由用户写入或明确拒绝后，才可把 Quest 标为 `completed`；草稿仍待确认时保持 `active` 或 `paused`。
+所有节点分别验证并不等于 Quest 已完成。只有实际应用输出已经提交、综合评估 `passed`，Distill 提案已经由用户写入或明确拒绝，并且新 Concept Note 的 Topic Map 计划已经链接、明确拒绝或因未晋升而不适用后，才可把 Quest 标为 `completed`；草稿或地图提案仍待确认时保持 `active` 或 `paused`。
 
 ## 接收教学结果
 
@@ -93,13 +94,14 @@ description: 管理跨会话 Learning Quest ID、状态和下一动作，并在�
 - 实际应用输出的类型、位置或摘要及其状态；
 - 综合评估的整体状态、各节点在输出中的证据和剩余缺口；
 - Quest 级 `distillStatus`，包括 `not_ready`、`ready`、`proposed`、`written` 或 `declined`；
+- Topic Map 计划的状态、地图标题、目标路径和 `create`/`update` 操作；找不到现有地图时也必须记录创建计划；
 - 仍影响路径的具体缺口；
 - 当前完成标准是否已经达到；
 - 可行的下一学习目标与可复习内容。
 
 本 Skill 合并写入状态，并按优先级生成最多两个主要未来动作：
 
-1. **完成当前收尾**：按“待节点评估 → 待实际应用输出 → 待综合评估 → 待 Distill”的顺序，为最早未完成阶段创建 `continue` 或 `distill` 动作。任何前序阶段都优先于新节点和主题延伸。
+1. **完成当前收尾**：按“待节点评估 → 待实际应用输出 → 待综合评估 → 待 Distill → 待 Topic Map”的顺序，为最早未完成阶段创建 `continue`、`distill` 或 `topic-map` 动作。任何前序阶段都优先于新节点和主题延伸。
 2. **继续或延伸**：上述教学与晋升阶段都已完成时，Quest 未完成使用 `continue`；已完成且确有相邻目标时使用 `extend`。
 3. **复习**：还有名额且存在掌握证据时才创建 `review` 动作。
 
@@ -114,7 +116,7 @@ Quest ID：<ID>
 当前位置：<节点或完成状态>
 
 以后可执行：
-1. <完成待节点评估/实际应用输出/综合评估/Distill，或继续当前路径/延伸主题>
+1. <完成待节点评估/实际应用输出/综合评估/Distill/Topic Map，或继续当前路径/延伸主题>
    /skill:learning-hub <continue|extend> <ID> 或 /skill:distill <节点>
 2. 复习已掌握内容
    /skill:learning-hub review <ID>

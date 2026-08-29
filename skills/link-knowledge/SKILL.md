@@ -28,6 +28,7 @@ description: 检查和建立 Concept Note、Topic Map、Learning Quest、来源�
 ## 更新规则
 
 - 宽泛主题进入 `03-主题地图/`，不要把 Topic Map 写成百科全书。
+- 新 Concept Note 晋升后，读取并遵循 [Topic Map 创建与归属规范](../../docs/topic-map-writing.md)，必须为它处理至少一个最直接的上位 Topic Map。合适地图不存在时，提出创建最小地图；不得只报告未找到后结束。
 - 一个概念可以属于多个 Topic Map，不通过深文件夹强制唯一归属。
 - 新建或更新 Topic Map 时，YAML `tags` 统一只保留 `map`，不添加 `domain/...`；Concept Note 等其他正式知识仍按领域标签注册表分类。
 - 提出新增或修改链接时，展示关系、理由、将写入的 `[[目标笔记]]` 和受影响文件，等待用户确认后再写入。

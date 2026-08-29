@@ -46,6 +46,12 @@
         "gaps": []
       },
       "distillStatus": "not_ready",
+      "topicMapPlan": {
+        "status": "not_checked",
+        "mapTitle": null,
+        "mapPath": null,
+        "operation": null
+      },
       "evidenceSummary": [],
       "gaps": [],
       "persistenceApproved": true,
@@ -72,7 +78,7 @@
 
 - `activeQuestId` 只是当前焦点，不代表唯一 Quest。
 - Quest 状态只使用 `active`、`paused`、`completed`、`archived`。
-- Action 类型至少支持 `continue`、`extend`、`review`；辅助动作可以使用 `session-log` 或 `distill`。
+- Action 类型至少支持 `continue`、`extend`、`review`；辅助动作可以使用 `session-log`、`distill` 或 `topic-map`。
 - Action 状态只使用 `pending`、`in_progress`、`completed`、`cancelled`。
 - `inbox` 中每个动作都指向存在的 Quest。
 - 同一 Quest、同一目标的重复 `pending` 动作合并更新，不重复追加。
@@ -82,6 +88,7 @@
 - `applicationOutput.status` 只使用 `not_ready`、`pending`、`submitted`、`revision_needed`。它描述用户整合全部节点的实际成果，不是 Agent 的示例。
 - `comprehensiveAssessment.status` 只使用 `not_ready`、`pending`、`passed`、`failed`。只有 `submitted` 的实际应用输出才能进入综合评估。
 - Quest 级 `distillStatus` 只使用 `not_ready`、`ready`、`proposed`、`written`、`declined`。它描述综合评估之后的知识产物状态，不放在单个节点中。
+- `topicMapPlan.status` 只使用 `not_checked`、`proposed`、`linked`、`declined`、`not_applicable`。`operation` 只使用 `create` 或 `update`；当地图不存在时必须保存 `create` 计划，不能把缺失地图当作无需处理。
 
 ## 状态转换
 
@@ -93,9 +100,11 @@
 - 用户提交实际应用输出：记录类型、路径或摘要，并把状态改为 `submitted`；随后把 `comprehensiveAssessment.status` 改为 `pending`。
 - 综合评估未通过：状态改为 `failed`，记录需返回的节点和输出修改；修订期间 `applicationOutput.status` 为 `revision_needed`。
 - 综合评估通过：状态改为 `passed`，记录各节点在成果中的证据，并把 Quest 级 `distillStatus` 改为 `ready`。
-- `distill` 展示候选草稿：Quest 级 `distillStatus` 改为 `proposed`；用户确认写入后改为 `written`，明确拒绝则改为 `declined`。
-- Quest 只有在综合评估为 `passed` 且 `distillStatus` 为 `written` 或 `declined` 后才可标记 `completed`；`ready` 或 `proposed` 表示收束尚未完成。
-- 恢复 Quest 时，按 `awaiting_assessment` → `applicationOutput` 未完成 → `comprehensiveAssessment` 未完成 → `distillStatus` 为 `ready`/`proposed` 的顺序处理，优先于任何新节点或 `extend` 动作。
+- `distill` 展示候选草稿时，同时完成 Topic Map 路由：Quest 级 `distillStatus` 改为 `proposed`；`topicMapPlan` 记录地图标题、路径和 `create`/`update`，状态改为 `proposed`。没有合适现有地图时仍记录创建计划。
+- 用户确认 Concept Note 写入后把 `distillStatus` 改为 `written`；确认地图新建或更新后把 `topicMapPlan.status` 改为 `linked`。地图被明确拒绝时改为 `declined`，只是推迟时保持 `proposed` 并创建 `topic-map` 动作。
+- 用户明确拒绝 Concept Note 晋升时把 `distillStatus` 改为 `declined`，并把 `topicMapPlan.status` 改为 `not_applicable`。
+- Quest 只有在综合评估为 `passed`，且满足“`distillStatus` 为 `written` 并且 Topic Map 为 `linked` 或 `declined`”或“`distillStatus` 为 `declined` 且 Topic Map 为 `not_applicable`”时才可标记 `completed`。
+- 恢复 Quest 时，按 `awaiting_assessment` → `applicationOutput` 未完成 → `comprehensiveAssessment` 未完成 → `distillStatus` 为 `ready`/`proposed` → `topicMapPlan.status` 为 `proposed` 的顺序处理，优先于任何新节点或 `extend` 动作。
 - `extend`：父 Quest 保持 `completed`，创建具有 `parentQuestId` 的新 Quest。
 - `review`：动作改为 `in_progress`，复习结束后写回结果摘要并标记 `completed`；下一次复习时间由 `.learning/review-queue.json` 管理。
 - `pause`：Quest 改为 `paused`，不改变其 `pending` 动作。
