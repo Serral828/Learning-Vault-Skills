@@ -14,6 +14,7 @@
 | 学习一个新问题 | `/skill:teach <你最终想做到什么>` |
 | 整理自己已经写好的笔记 | `/skill:integrate-learning <00-原始笔记下的相对路径>` |
 | 恢复以前没有完成的学习 | `/skill:learning-hub list` |
+| 暂存现阶段学不动的概念 | `/skill:defer-concept <概念>` |
 
 最常用的两个例子：
 
@@ -302,6 +303,21 @@ Agent 一次只讲一个必要节点，并提供可以推演的具体例子。�
 
 你可以继续追问“为什么”“能否再举一个例子”“和另一个概念有什么区别”。这些解答会进入之后生成的正式笔记，不会被丢成聊天记录。
 
+Teach 会先正常解释节点知识和相关概念，不会根据猜测自动降低知识深度。如果你只是没听懂，可以继续要求换一种解释、再举一个例子或说明某一步为什么成立。
+
+如果某个重要概念现阶段确实学不动，并且你决定以后再专门学习，可以主动暂存：
+
+```text
+/skill:defer-concept 电压跟随器
+```
+
+Agent 会保存它来自哪个 Quest 和节点、为什么被引入、已经讲过什么、当前卡点以及以后应回到哪里，并说明它在本次问题中属于：
+
+- **阻塞依赖**：缺少它就无法完成当前节点。该节点暂停评估；可以先学习其他独立节点，以后学完暂存概念再返回。
+- **辅助知识**：没有它仍能完成当前节点。原节点继续，评估会排除该概念，暂存项留待以后独立恢复。
+
+同一个概念在不同问题中的角色可能不同。例如“电压跟随器”在“设计运放缓冲级”中可能是阻塞依赖，在“用输出电阻解释负载压降”中可能只是辅助知识。暂存不会生成 Concept Note、掌握证据或复习任务。完整规则见 [暂存“现阶段无法理解”的概念](docs/deferred-concepts.md)。
+
 只有你确认进入评估后，Agent 才会出题。如果你不想评估，直接说下面任意类似表达即可：
 
 ```text
@@ -372,6 +388,7 @@ Agent 会对整体成果做一次综合评估，记录为 `passed` 或 `complete
 | --- | --- | --- |
 | 从真实问题开始学习 | `/skill:teach <目标>` | `teach` |
 | 查看或恢复学习项目 | `/skill:learning-hub <动作> <Quest ID>` | `learning-hub` |
+| 暂存或恢复现阶段学不动的概念 | `/skill:defer-concept <概念或动作>` | `defer-concept` |
 | 单独检查自己会不会用 | `/skill:assess <能力>` | `assess` |
 | 核查事实、公式、定义或来源 | `/skill:verify <断言>` | `verify` |
 | 整理已经完成教学流程的知识 | `/skill:distill <概念>` | `distill` |
@@ -502,22 +519,102 @@ tag:#map
 
 `integrate-learning` 不会永久删除输入。永久清空是独立、不可恢复的操作。
 
-## 跨会话状态
+## Learning Hub：跨会话学习总入口
 
-`.learning/learning-progress.json` 保存多个 Quest 的 ID、当前位置和待办。`.learning/mastery-state.json` 保存掌握证据，`.learning/review-queue.json` 保存复习队列。
+`learning-hub` 是学习项目的总控制台，不负责具体讲课。它保存每个 Learning Quest 的稳定 ID、当前节点、待完成的评估与笔记动作、暂存依赖以及返回位置。关闭会话或开始另一个主题后，这些状态仍然保留。
 
-常用命令：
+第一次不知道该执行什么时，直接输入：
 
 ```text
 /skill:learning-hub list
-/skill:learning-hub show <Quest ID>
-/skill:learning-hub continue <Quest ID>
-/skill:learning-hub extend <Quest ID>
-/skill:learning-hub review <Quest ID>
-/skill:learning-hub pause <Quest ID>
 ```
 
-Quest 状态不会授权系统静默写入正式笔记；正式知识仍需单独确认。
+它会同时列出：
+
+1. 正在学习、已暂停和已完成的 Quest；
+2. 每个 Quest 当前停在哪一步；
+3. 尚未完成的评估、实际应用、Distill、关系或 Topic Map 动作；
+4. 所有未处理的阻塞依赖、辅助知识和正在恢复的暂存概念。
+
+### 常用命令
+
+| 命令 | 用途 | 什么时候用 |
+| --- | --- | --- |
+| `/skill:learning-hub list` | 查看全局学习总览和暂存概念摘要 | 不确定下一步、换了新会话或想检查旧待办时 |
+| `/skill:learning-hub show <ID或标题>` | 查看一个 Quest 的目标、位置、证据、待办和相关暂存概念 | 想先了解状态但不立即继续时 |
+| `/skill:learning-hub continue <ID或标题>` | 从原检查点继续同一个 Quest | 上次尚未完成教学、评估、输出或 Distill 时 |
+| `/skill:learning-hub extend <ID或标题>` | 从已完成 Quest 创建相邻的新学习目标 | 原问题已完成，准备学习延伸主题时 |
+| `/skill:learning-hub review <ID或标题>` | 复习已经形成掌握证据的内容 | 想进行回忆和迁移练习时 |
+| `/skill:learning-hub pause <ID或标题>` | 暂停 Quest，但保留检查点和待办 | 现在没时间继续时 |
+| `/skill:learning-hub archive <ID或标题>` | 停止主动提醒，但保留历史 | 确定暂时不再推进该 Quest 时 |
+| `/skill:learning-hub deferred` | 查看完整的待学习概念清单 | 专门整理阻塞依赖和辅助知识时 |
+
+`continue`、`extend` 和 `review` 不相同：
+
+- `continue` 回到同一个尚未完成的问题；
+- `extend` 创建一个新的相关 Quest，不延长旧 Quest；
+- `review` 只复习已经学过且有证据的内容，不能拿未学习的暂存概念冒充复习。
+
+### `list` 会显示什么
+
+示例输出：
+
+```text
+正在学习
+- LQ-20260831-A1B2  电路驱动能力
+  位置：输出阻抗与负载压降
+
+已暂停
+- LQ-20260820-C3D4  机器学习基础
+  待办：继续实际应用输出
+
+待学习概念
+- [阻塞] DC-001  电压跟随器
+  来源：LQ-20260831-A1B2 / 缓冲级如何提高驱动能力
+  恢复：/skill:defer-concept resume DC-001
+- [辅助] DC-002  运放压摆率
+  来源：LQ-20260831-A1B2 / 电压跟随器的工程边界
+  恢复：/skill:defer-concept resume DC-002
+```
+
+辅助知识不会因为原 Quest 完成或归档而从这个区域消失。`learning-hub list` 提供总览；需要查看当时讲过什么、卡在哪里和返回位置时使用：
+
+```text
+/skill:defer-concept show DC-002
+```
+
+只想查看所有暂存概念，可以使用下面任意一个入口：
+
+```text
+/skill:learning-hub deferred
+/skill:defer-concept list
+```
+
+### 典型恢复流程
+
+继续一个普通 Quest：
+
+```text
+/skill:learning-hub list
+/skill:learning-hub continue LQ-20260831-A1B2
+```
+
+恢复阻塞依赖或辅助知识：
+
+```text
+/skill:defer-concept resume DC-001
+```
+
+恢复暂存概念时会创建或复用一个正式依赖 Quest，并交给 `teach` 正常教学。依赖 Quest 完成后，阻塞来源会生成“返回原 Quest/节点”的动作；辅助来源不会要求重做已经完成的原节点。
+
+### 状态保存在哪里
+
+- `.learning/learning-progress.json`：Quest、节点位置和待办；
+- `.learning/deferred-concepts.json`：主动暂存的概念、来源和返回位置；
+- `.learning/mastery-state.json`：掌握证据；
+- `.learning/review-queue.json`：复习队列。
+
+这些状态不等于正式知识，也不会授权系统静默写入 Concept Note。正式笔记和知识关系仍需按对应流程确认。
 
 ## 默认隔离
 
@@ -557,6 +654,34 @@ Quest 状态不会授权系统静默写入正式笔记；正式知识仍需单�
 ### 学习结束时没时间处理后续动作怎么办？
 
 不用当场选择。下次输入 `/skill:learning-hub list`，未完成的 Distill、关系、Topic Map、延伸和复习动作都会保留。
+
+### 当前解释依赖一个我还听不懂的概念怎么办？
+
+如果你还想继续理解，直接追问即可，Teach 会继续换角度解释。只有你决定“现阶段先不学”时才调用：
+
+```text
+/skill:defer-concept <概念>
+```
+
+例如：
+
+```text
+/skill:defer-concept 电压跟随器
+```
+
+Agent 会说明它是阻塞依赖还是辅助知识及其理由。阻塞依赖会暂停相关节点；辅助知识不会阻止原节点继续。以后使用下面的命令找回：
+
+```text
+/skill:learning-hub list
+/skill:learning-hub deferred
+/skill:defer-concept list
+/skill:defer-concept show DC-001
+/skill:defer-concept resume DC-001
+```
+
+`learning-hub list` 的“待学习概念”区域会持续显示辅助项；即使来源 Quest 已经完成或归档，它也不会自动消失。
+
+恢复时会创建或继续一个正式 Learning Quest，完成后再返回原阻塞节点；不会把暂存时听过的内容当成已经掌握。
 
 ### `/skill:...` 没有出现或无法识别怎么办？
 
@@ -600,6 +725,7 @@ Get-Location
 
 - [原始笔记的封闭语料转换边界](docs/raw-note-conversion-boundary.md)
 - [原始笔记图片说明约定](docs/raw-note-images.md)
+- [暂存“现阶段无法理解”的概念](docs/deferred-concepts.md)
 - [正式笔记的实例与链接规范](docs/concept-note-writing.md)
 - [Topic Map 创建与归属规范](docs/topic-map-writing.md)
 - [领域标签注册表](docs/domain-tags.md)

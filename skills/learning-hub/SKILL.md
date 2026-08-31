@@ -11,6 +11,7 @@ description: 管理跨会话 Learning Quest ID、状态和下一动作，并在�
 
 - 本 Skill 独占 `.learning/learning-progress.json` 的结构管理和合并写入。
 - `teach` 负责教学，在每个规划节点边界调用一次 `assess`；全部节点评估后组织实际应用输出和一次综合评估，评估结束即主动调用 `distill`，不因掌握缺口安排补测。
+- `defer-concept` 独占 `.learning/deferred-concepts.json`。本 Skill 只在节点中保存 Deferred ID、依赖影响和来源状态，并负责原 Quest、依赖 Quest 与返回动作之间的路由。
 - `review` 负责主动回忆、迁移评估和复习证据。
 - 本 Skill 只解析 Quest、保存状态、管理动作并路由到上述 Skill，不替代它们。
 - 不把状态文件当成正式知识，也不借状态授权写入 Concept Note、Topic Map、来源、实践产出或完整 Session Log。
@@ -62,26 +63,31 @@ tags:
 /skill:learning-hub review <Quest ID 或标题>
 /skill:learning-hub pause <Quest ID 或标题>
 /skill:learning-hub archive <Quest ID 或标题>
+/skill:learning-hub deferred
 ```
 
 ### `list` 与 `show`
 
-- `list` 按 `active`、`paused`、`completed` 分组，展示 ID、标题、当前位置和仍为 `pending` 的两个主要动作；默认不展示已归档 Quest。
-- `show` 展示一个 Quest 的目标、完成标准、能力证据、缺口、父子关系和动作状态，不倾倒完整聊天记录。
+- `list` 按 `active`、`paused`、`completed` 分组，展示 ID、标题、当前位置和仍为 `pending` 的两个主要动作；随后必须读取完整的 `.learning/deferred-concepts.json`，追加一个独立的“待学习概念”区域。该区域不依赖来源 Quest 是否仍为 active、completed 或 archived，因此辅助暂存项不会随着原 Quest 完成而消失。
+- “待学习概念”按“阻塞依赖、辅助知识、正在学习/等待返回”分组，并按来源逐项展示 Deferred ID、概念标题、来源 Quest/节点、状态和恢复命令。默认隐藏 `resolved`、`addressed`、`cancelled` 历史；没有待学习概念时明确显示“暂无”。
+- `show` 展示一个 Quest 的目标、完成标准、能力证据、缺口、父子关系、动作状态，以及相关 Deferred ID、概念标题、来源节点、影响和恢复命令；不倾倒完整聊天记录，也不把暂存项列为缺口或已掌握概念。
+- `deferred` 直接路由到 `defer-concept list`，展示全部未处理的阻塞来源、辅助来源和正在恢复项；这是只想整理待学习概念时的快捷入口。
 
 ### `continue`
 
 用于尚未完成当前收尾或完成标准的 Quest。读取节点状态和掌握证据，简短说明上次停在哪里，并按以下优先级恢复：
 
-1. 当前节点为 `clarifying`：交给 `teach` 恢复该节点的疑问窗口，不能自动开始评估。
-2. 当前节点为 `awaiting_assessment`：说明用户此前已经明确选择评估，再交给 `teach` 调用 `assess`。
-3. 全部节点已评估但 `applicationOutput.status` 为 `pending`：恢复实际应用输出任务。
-4. 已提交输出但 `comprehensiveAssessment.status` 为 `pending`：交给 `teach` 调用 `assess` 完成首次综合评估。旧数据中的 `failed` 视为已完成且有缺口，不恢复补测。
-5. Quest 级 `distillStatus` 为 `ready` 或 `proposed`：调用 `distill` 展示或恢复候选草稿。
-6. `conceptRelationPlans` 中存在 `proposed`：交给 `link-knowledge` 按保存的文件对、两侧关系文本和理由恢复已有 Concept Note 的成对更新，不能只把链接留在新笔记中。
-7. `conceptLinks` 中存在 `proposed`，或 `distillStatus` 已为 `written` 但 `conceptLinks` 为空：交给 `link-knowledge` 恢复或补查 Learning Quest 与 Concept Note 的双向链接，不允许只保留一侧。
-8. Concept Note 已写入但 `topicMapPlan.status` 为 `proposed`：交给 `distill` 或 `link-knowledge` 恢复 Topic Map 新建或更新提案，不能因为地图原先不存在就跳过。
-9. 上述收尾都已完成：再由 `teach` 从最近未完成的新节点继续。
+1. 当前节点为 `waiting_on_deferred`，或存在未解决的 `blocking` 暂存引用：通过 `defer-concept` 展示概念快照和 `/skill:defer-concept resume <ID>`。用户要求恢复时路由到该 Skill；不得自动评估或直接通过原节点。
+2. 依赖 Quest 已完成且暂存来源为 `waiting_return`：把原节点改回 `teaching`，交给 `teach` 重新解释前置概念与主问题的联系，并通过 `defer-concept` 把该来源改为 `resolved`。
+3. 当前节点为 `clarifying`：交给 `teach` 恢复该节点的疑问窗口，不能自动开始评估。
+4. 当前节点为 `awaiting_assessment`：说明用户此前已经明确选择评估，再交给 `teach` 调用 `assess`。
+5. 全部节点已评估但 `applicationOutput.status` 为 `pending`：恢复实际应用输出任务。
+6. 已提交输出但 `comprehensiveAssessment.status` 为 `pending`：交给 `teach` 调用 `assess` 完成首次综合评估。旧数据中的 `failed` 视为已完成且有缺口，不恢复补测。
+7. Quest 级 `distillStatus` 为 `ready` 或 `proposed`：调用 `distill` 展示或恢复候选草稿。
+8. `conceptRelationPlans` 中存在 `proposed`：交给 `link-knowledge` 按保存的文件对、两侧关系文本和理由恢复已有 Concept Note 的成对更新，不能只把链接留在新笔记中。
+9. `conceptLinks` 中存在 `proposed`，或 `distillStatus` 已为 `written` 但 `conceptLinks` 为空：交给 `link-knowledge` 恢复或补查 Learning Quest 与 Concept Note 的双向链接，不允许只保留一侧。
+10. Concept Note 已写入但 `topicMapPlan.status` 为 `proposed`：交给 `distill` 或 `link-knowledge` 恢复 Topic Map 新建或更新提案，不能因为地图原先不存在就跳过。
+11. 上述收尾都已完成：再由 `teach` 从最近未完成的新节点继续。
 
 不要跳过待澄清、用户已选择的待评估或待提炼状态，也不要重新教授已有充分证据的内容。
 
@@ -100,9 +106,9 @@ tags:
 ### `pause` 与 `archive`
 
 - `pause` 保留检查点和 `pending` 动作，允许以后恢复。
-- `archive` 表示不再主动提醒，但保留历史记录；不得物理删除 Quest、动作或正式笔记。
+- `archive` 表示不再主动提醒该 Quest，但保留历史记录；不得物理删除 Quest、动作或正式笔记，也不得取消或隐藏仍为 `parked`、`learning`、`waiting_return` 的暂存概念来源。
 
-所有节点分别完成一次评估并不等于 Quest 已完成。只有实际应用输出已经提交、综合评估为 `passed` 或 `completed_with_gaps`，Distill 提案已经由用户写入或明确拒绝；若 Concept Note 已写入，`conceptLinks` 必须至少有一项且全部为 `linked` 或被明确 `declined`，`conceptRelationPlans` 也不得留有 `proposed`；同时 Topic Map 计划已经链接、明确拒绝或因未晋升而不适用，才可把 Quest 标为 `completed`。空的 `conceptLinks` 或仍待更新的旧概念关系不能被当成“没有待办”。
+所有节点分别完成一次评估并不等于 Quest 已完成。只有不存在未解决的 `blocking` 暂存依赖，实际应用输出已经提交、综合评估为 `passed` 或 `completed_with_gaps`，Distill 提案已经由用户写入或明确拒绝；若 Concept Note 已写入，`conceptLinks` 必须至少有一项且全部为 `linked` 或被明确 `declined`，`conceptRelationPlans` 也不得留有 `proposed`；同时 Topic Map 计划已经链接、明确拒绝或因未晋升而不适用，才可把 Quest 标为 `completed`。空的 `conceptLinks`、阻塞暂存依赖或仍待更新的旧概念关系不能被当成“没有待办”。未解决的 `supporting` 暂存知识不阻塞 Quest 完成，并继续由 `defer-concept` 独立保留。
 
 ## 接收教学结果
 
@@ -110,6 +116,7 @@ tags:
 
 - Quest ID；
 - 最近完成和当前节点；
+- 每个节点的 `deferredDependencies` 轻量引用，只包含 Deferred ID、本次来源的 `blocking`/`supporting` 影响和 `parked`/`learning`/`waiting_return`/`resolved`/`cancelled` 状态；完整暂存记录由 `defer-concept` 管理；
 - 每个节点的 `clarificationInsights`，包括用户的实质性疑问、最终解答、新增例子或边界以及建议写入笔记的位置；
 - 通过 `assess` 获得的能力证据；
 - 每个已教授节点的状态、要求证据等级和实际证据等级；
@@ -125,9 +132,13 @@ tags:
 
 本 Skill 合并写入状态，并按优先级生成最多两个主要未来动作：
 
-1. **完成当前收尾**：按“待疑问澄清 → 待首次节点评估 → 待实际应用输出 → 待首次综合评估 → 待 Distill → 待新旧 Concept Note 双向关系 → 待 Quest–Concept 双向链接 → 待 Topic Map”的顺序，为最早未执行阶段创建 `continue`、`distill`、`link-knowledge` 或 `topic-map` 动作。评估已有结果但带缺口时不创建补测动作。
+1. **完成当前收尾**：按“待解决的阻塞暂存依赖 → 待返回原节点 → 待疑问澄清 → 待首次节点评估 → 待实际应用输出 → 待首次综合评估 → 待 Distill → 待新旧 Concept Note 双向关系 → 待 Quest–Concept 双向链接 → 待 Topic Map”的顺序，为最早未执行阶段创建 `continue`、`distill`、`link-knowledge` 或 `topic-map` 动作。阻塞暂存动作的展示命令使用 `/skill:defer-concept resume <ID>`；评估已有结果但带缺口时不创建补测动作。
 2. **继续或延伸**：上述教学与晋升阶段都已完成时，Quest 未完成使用 `continue`；已完成且确有相邻目标时使用 `extend`。
 3. **复习**：还有名额且存在掌握证据时才创建 `review` 动作。
+
+辅助暂存概念不自动占用原 Quest 的两个主要未来动作名额，也不进入复习队列；它始终可从 `/skill:defer-concept list` 找回。阻塞暂存概念只占用一个必要的恢复动作，不同时制造重复 `continue` 或 `extend`。
+
+`defer-concept resume` 创建的正式依赖 Quest 必须保存 `originDeferredConceptId` 和返回目标。该 Quest 完成后，为仍有效的阻塞来源合并创建“返回 `<原 Quest>/<原节点>`”的 `continue` 动作；不要自动验证原节点。辅助来源不强迫用户返回已经完成的原 Quest。
 
 “暂停且现在不选择”始终是隐含选项，不需要创建第三个菜单项。不要为了凑齐两个选项制造无意义延伸或对未掌握内容安排复习；也不要在存在待评估或待提炼收尾时先推荐延伸新主题。
 
@@ -145,6 +156,10 @@ Quest ID：<ID>
 2. 复习已掌握内容
    /skill:learning-hub review <ID>
 
+待学习概念：<数量；没有则写“暂无”>
+- [<阻塞|辅助|恢复中>] <Deferred ID> <概念> — <来源 Quest/节点>
+  /skill:defer-concept resume <Deferred ID>
+
 现在不需要选择，状态已经保存。
 ```
 
@@ -152,6 +167,6 @@ Quest ID：<ID>
 
 ## 新 Quest 与旧待办
 
-用户开始新学习时照常激活新 Quest，旧 Quest 和旧动作不得被覆盖。每个新学习会话最多低干扰提醒一次：仍有多少旧 Quest 包含待办，以及可用 `/skill:learning-hub list` 查看。不要强迫用户先清空旧待办，也不要每轮重复提醒。
+用户开始新学习时照常激活新 Quest，旧 Quest、旧动作和暂存概念不得被覆盖。每个新学习会话最多低干扰提醒一次：仍有多少旧 Quest 包含待办、多少个暂存概念尚未处理（其中多少为辅助知识），以及可用 `/skill:learning-hub list` 查看。不要强迫用户先清空旧待办，也不要每轮重复提醒。
 
 动作完成、取消、被新计划替代或 Quest 归档时及时更新状态。同一 Quest、同一目标的重复动作应合并；收件箱变大时只在用户查看或明确整理时提议取消、合并或归档，不自动丢弃。

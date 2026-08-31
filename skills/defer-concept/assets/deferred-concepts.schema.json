@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deferred-concepts.schema.json",
+  "title": "Deferred Concept Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "nextId", "nextOriginId", "updatedAt", "concepts"],
+  "properties": {
+    "version": { "const": 1 },
+    "nextId": { "type": "integer", "minimum": 1 },
+    "nextOriginId": { "type": "integer", "minimum": 1 },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "concepts": {
+      "type": "object",
+      "propertyNames": { "pattern": "^DC-[0-9]{3,}$" },
+      "additionalProperties": { "$ref": "#/$defs/concept" }
+    }
+  },
+  "$defs": {
+    "concept": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "aliases", "status", "originRefs", "teachingSnapshot", "linkedLearningQuestId", "createdAt", "updatedAt"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^DC-[0-9]{3,}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "aliases": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "status": { "enum": ["parked", "resuming", "addressed", "cancelled"] },
+        "originRefs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/origin" } },
+        "teachingSnapshot": { "$ref": "#/$defs/snapshot" },
+        "linkedLearningQuestId": { "type": ["string", "null"] },
+        "existingConceptNotePath": { "type": ["string", "null"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "addressedAt": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["originId", "questId", "nodeTitle", "whyIntroduced", "impact", "impactReason", "returnPoint", "status", "createdAt", "updatedAt"],
+      "properties": {
+        "originId": { "type": "string", "pattern": "^DCO-[0-9]{3,}$" },
+        "questId": { "type": "string", "minLength": 1 },
+        "nodeTitle": { "type": "string", "minLength": 1 },
+        "whyIntroduced": { "type": "string", "minLength": 1 },
+        "completionCriterion": { "type": ["string", "null"] },
+        "impact": { "enum": ["blocking", "supporting"] },
+        "impactReason": { "type": "string", "minLength": 1 },
+        "returnPoint": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["parked", "learning", "waiting_return", "resolved", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["explained", "examples", "stickingPoint", "userStatement", "suggestedResumeStart"],
+      "properties": {
+        "explained": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "examples": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "stickingPoint": { "type": ["string", "null"] },
+        "userStatement": { "type": ["string", "null"] },
+        "suggestedResumeStart": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
+
