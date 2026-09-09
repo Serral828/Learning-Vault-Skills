@@ -25,6 +25,7 @@
 
 | 你的目标 | 直接输入 |
 | --- | --- |
+| 初始化或检查知识库结构 | `帮我初始化推荐的知识库结构` |
 | 学习一个新问题 | `/skill:teach <你最终想做到什么>` |
 | 整理自己已经写好的笔记 | `/skill:integrate-learning <00-原始笔记下的相对路径>` |
 | 恢复以前没有完成的学习 | `/skill:learning-hub list` |
@@ -49,6 +50,9 @@
 ```text
 你的知识库/
 ├── .pi/
+│   ├── docs/
+│   ├── scripts/
+│   │   └── init-vault.mjs
 │   ├── settings.json
 │   └── skills/
 ├── 00-原始笔记/
@@ -71,7 +75,52 @@ Set-Location -LiteralPath 'C:\path\to\your-vault'
 git clone https://github.com/Serral828/Learning-Vault-Skills.git .pi
 ```
 
-如果已经有 `.pi/`，不要直接覆盖。只合并本仓库的 `skills/` 和 `docs/`，并检查现有配置。
+如果已经有 `.pi/`，不要直接覆盖。合并本仓库的 `skills/`、`docs/` 和 `scripts/`，并检查现有配置。
+
+仓库准备好后，不需要手工逐个创建目录。在 Vault 根目录先预览：
+
+```powershell
+node .pi/scripts/init-vault.mjs --dry-run
+```
+
+确认目标正确后正式生成：
+
+```powershell
+node .pi/scripts/init-vault.mjs
+```
+
+如果当前目录就是 `.pi/`，对应命令是 `node scripts/init-vault.mjs`。脚本默认把自身所在 `.pi/` 的父目录识别为 Vault 根目录，创建推荐目录，并在文件尚不存在时初始化：
+
+```text
+.learning/learning-progress.json
+.learning/deferred-concepts.json
+```
+
+脚本可以重复运行，已有目录和状态文件不会被覆盖。常用参数：
+
+```text
+--root <路径>  指定另一个 Vault 根目录
+--dry-run      只预览，不写入
+--no-state     只创建目录，不初始化状态文件
+--json         输出方便 Agent 检查的 JSON
+--help         查看完整帮助
+```
+
+也可以直接对 Agent 说自然语言，不需要输入任何脚本命令：
+
+```text
+帮我初始化推荐的知识库结构
+```
+
+Agent 会自动调用 `init-vault` Skill 和初始化脚本，先在内部检查目标，然后创建缺失项。明确说“初始化”“创建”或“补齐”已经构成当前 Vault 的执行授权，不会再让你确认一遍终端命令。
+
+如果只想检查而不写入，可以说：
+
+```text
+检查一下知识库目录是否完整
+```
+
+只有路径存在歧义、目标超出当前 Vault 或同时发现多个候选时，Agent 才会询问。完整说明见 [知识库结构初始化脚本](scripts/README.md)。
 
 ### 2. 启用 Skill 命令
 
@@ -425,6 +474,7 @@ Agent 会对整体成果做一次综合评估，记录为 `passed` 或 `complete
 
 | 你现在想做什么 | 命令 | Skill |
 | --- | --- | --- |
+| 初始化、补齐或检查 Vault 结构 | 直接说“帮我初始化知识库结构”，或使用 `/skill:init-vault` | `init-vault` |
 | 从真实问题开始学习 | `/skill:teach <目标>` | `teach` |
 | 查看或恢复学习项目 | `/skill:learning-hub <动作> <Quest ID>` | `learning-hub` |
 | 暂存或恢复现阶段学不动的概念 | `/skill:defer-concept <概念或动作>` | `defer-concept` |
