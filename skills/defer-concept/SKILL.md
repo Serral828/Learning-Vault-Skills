@@ -1,6 +1,6 @@
 ---
 name: defer-concept
-description: 在 Teach 过程中，用户明确表示某个概念现阶段无法理解并希望以后再学时，将它跨会话暂存，区分阻塞依赖与辅助知识，并负责列出、查看、恢复或取消暂存。普通的“没听懂”仍由 Teach 继续解释，不自动触发本 Skill。
+description: 暂存 Teach 中用户明确决定以后再学的概念，并支持查看、恢复或取消。仅表示没听懂时不触发，继续由 Teach 解释。
 ---
 
 # Defer Concept

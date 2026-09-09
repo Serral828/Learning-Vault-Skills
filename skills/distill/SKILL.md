@@ -1,6 +1,6 @@
 ---
 name: distill
-description: 将已经完成逐节点评估、实际应用输出和一次综合评估的知识提炼为候选 Concept Note，为其路由或创建上位 Topic Map，并在用户确认后写入。评估存在掌握缺口时也可使用，但不得把缺口伪装成已掌握。
+description: 把 Teach 中完成讲解、应用和综合评估的知识整理为候选 Concept Note。只处理教学产物；整理既有原始笔记使用 integrate-learning。
 ---
 
 # Distill

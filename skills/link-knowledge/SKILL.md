@@ -1,6 +1,6 @@
 ---
 name: link-knowledge
-description: 检查和建立 Concept Note、Topic Map、Learning Quest、来源及产出之间有明确语义的关系。用户要求连接知识或新概念晋升后使用。
+description: 为正式知识文件建立或更新有理由的双向 Wikilink。用户要求连接知识或新 Concept Note 晋升后使用；仅核验关系真假使用 verify。
 ---
 
 # Link Knowledge

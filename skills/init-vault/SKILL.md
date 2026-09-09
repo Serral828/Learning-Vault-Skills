@@ -1,6 +1,6 @@
 ---
 name: init-vault
-description: 检查或生成本项目推荐的 Learning Vault 目录与初始状态文件。用户说“初始化知识库”“创建推荐目录”“补齐 Vault 结构”“检查知识库目录是否完整”等自然语言时使用；用户不需要提供终端命令。
+description: 检查或补齐 Learning Vault 推荐目录和初始状态文件。用户要求初始化、补齐或检查知识库结构时使用。
 ---
 
 # Init Vault

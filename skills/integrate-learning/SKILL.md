@@ -1,6 +1,6 @@
 ---
 name: integrate-learning
-description: 将用户已写在 00-原始笔记 下的一篇或一组 Markdown 笔记整合为概念、主题地图、方法或来源记录，并在完整覆盖后提供可恢复清理。用户要求整合、提炼或导入自己的既有学习笔记时使用。
+description: 忠实整理用户明确指定的 00-原始笔记 Markdown。只处理既有原始笔记；当前教学产物使用 distill。
 ---
 
 # Integrate Learning

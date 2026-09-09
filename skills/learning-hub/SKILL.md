@@ -1,6 +1,6 @@
 ---
 name: learning-hub
-description: 管理跨会话 Learning Quest ID、状态和下一动作，并在继续学习、主题延伸与复习之间路由。用户开始、恢复、列出、切换、暂停或归档学习项目，或 teach、review 需要持久化进度时使用；不负责具体教学、事实核查或掌握评估。
+description: 管理和恢复已有 Learning Quest 的跨会话状态与待办。用户查看、继续、切换、暂停或归档已有学习项目时使用；新学习目标使用 teach。
 ---
 
 # Learning Hub

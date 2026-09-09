@@ -1,6 +1,6 @@
 ---
 name: assess
-description: 通过一次性的真实案例、故障诊断、预测、方案设计和权衡决策记录用户能否迁移应用知识。每个教学节点结束、全部节点后的实际应用输出、复习或整理 Concept Note 前需要能力证据时使用；事实与来源核查应使用 verify。
+description: 用一次真实任务判断用户能否迁移应用已学知识。Teach、Review 或用户明确要求测试掌握程度时使用；事实核查使用 verify。
 ---
 
 # Assess
