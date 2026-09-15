@@ -33,6 +33,7 @@
           "requiredEvidenceLevel": 2,
           "evidenceLevel": null,
           "clarificationInsights": [],
+          "assessmentNoteExcerpts": [],
           "deferredDependencies": []
         }
       },
@@ -91,6 +92,7 @@
 - `completed`、`cancelled` 和 `archived` 项保留历史，不默认删除。
 - `nodeStates` 可以在旧状态中缺省，并在下一次教学检查点按需补充；不得因缺少该字段重建整个 Quest。
 - `nodeStates.<节点>.clarificationInsights` 保存对正式笔记有长期价值的疑问解答。每项至少包含 `question`、`resolution` 和 `noteUse`，可选 `exampleOrBoundary`；不保存寒暄、流程选择或完整聊天转录。
+- `nodeStates.<节点>.assessmentNoteExcerpts` 只保存用户明确同意纳入最终 Concept Note 的节点评估摘录。每项包含 `title`、`scenario`、`responseSummary`、`feedbackSummary`、`noteUse` 和 `status`；`status` 只使用 `approved` 或 `included`。不得保存完整对话、证据分数、流程状态或用户拒绝的候选；旧状态可缺省该字段。
 - `nodeStates.<节点>.deferredDependencies` 只保存 `deferredConceptId`、`impact` 和 `status`。`impact` 使用 `blocking` 或 `supporting`；`status` 使用 `parked`、`learning`、`waiting_return`、`resolved` 或 `cancelled`。完整标题、来源、教学快照和返回点从 `.learning/deferred-concepts.json` 读取，不在两处复制。
 - 正式依赖 Quest 可保存 `originDeferredConceptId` 和 `returnTargets`；`returnTargets` 中每项包含原 `questId`、`nodeTitle` 和 `originId`。普通 Quest 可以缺省这些字段。
 - 节点状态只使用 `teaching`、`clarifying`、`awaiting_assessment`、`waiting_on_deferred`、`validated`、`assessed_with_gaps`。讲解和实例完成后进入 `clarifying`，先处理用户疑问；只有用户明确要求评估时才进入 `awaiting_assessment`。`waiting_on_deferred` 表示存在尚未解决的阻塞暂存依赖，不能评估或直接放行。用户直接放行只适用于不存在阻塞暂存依赖的正式节点。证据达到 `requiredEvidenceLevel` 时进入 `validated`，否则进入 `assessed_with_gaps`。
@@ -115,6 +117,7 @@
 - 取消辅助来源：引用改为 `cancelled`。取消阻塞来源时不得自动通过节点；返回 `teaching` 重新处理依赖，或者由 Teach 经用户确认修改路径和完成标准。
 - 每次解决实质性疑问后：把精炼后的问题、解答、新增例子或边界及 `noteUse` 合并进当前节点的 `clarificationInsights`；同一问题追加完善，不重复堆叠。该字段必须随 Quest 传给 `distill`。
 - 节点完成一次 `assess`：达到要求等级时改为 `validated`，否则改为 `assessed_with_gaps`；两者都写入证据等级、摘要和缺口，并进入下一节点，不补测。
+- 节点评估存在有长期价值的实际作答时：先展示完整引用块候选并询问是否纳入最终笔记。用户明确同意后才把精炼内容加入 `assessmentNoteExcerpts`，状态为 `approved`；拒绝、说“不记录”或“下一步”时不保存候选，也不创建缺口或待办。该选择不改变节点状态，不允许提前跳过实际应用输出、综合评估或 Distill。
 - 节点不存在未解决的 `blocking` 暂存依赖时，用户明确说“可以通过”“下一步”“继续”或同义推进表达：节点直接改为 `validated`，`evidenceLevel` 写入 `requiredEvidenceLevel`，`gaps` 写为空数组；不得创建追问或补测动作。节点处于 `waiting_on_deferred` 时，同类表达只表示暂停或切换，不验证节点。
 - 所有必需节点均为 `validated` 或 `assessed_with_gaps`：`applicationOutput.status` 改为 `pending`，进入实际应用输出阶段。
 - 用户提交实际应用输出：记录类型、路径或摘要，并把状态改为 `submitted`；随后把 `comprehensiveAssessment.status` 改为 `pending`。
@@ -124,6 +127,7 @@
 - 用户确认新 Concept Note 与已有 Concept Note 的成对更新并回读验证后，把相应 `conceptRelationPlans.status` 改为 `linked`；明确拒绝时改为 `declined`；只是推迟时保持 `proposed`，并创建包含两侧文件、链接文本和理由的 `link-knowledge` 动作。
 - 用户确认 Concept Note 与 Quest 双向更新并回读验证后，把对应 `conceptLinks.status` 改为 `linked`；明确拒绝时改为 `declined`；只是推迟时保持 `proposed` 并创建 `link-knowledge` 动作。
 - 用户确认 Concept Note 写入后把 `distillStatus` 改为 `written`；确认地图新建或更新后，回读验证新概念位于保存的 `targetSection`、必要的 `reorganizationSummary` 已落实、原有链接未丢失且不存在空分组或笼统平铺清单，再把 `topicMapPlan.status` 改为 `linked`。地图被明确拒绝时改为 `declined`，只是推迟时保持 `proposed` 并创建包含目标分组和重排摘要的 `topic-map` 动作。
+- 用户确认包含评估摘录的 Concept Note 写入并回读验证后，把实际写入的 `assessmentNoteExcerpts.status` 从 `approved` 改为 `included`；未进入最终草稿的已批准摘录保持 `approved` 并在提案中说明原因，不得静默丢弃。
 - 用户明确拒绝 Concept Note 晋升时把 `distillStatus` 改为 `declined`，并把 `topicMapPlan.status` 改为 `not_applicable`。
 - Quest 只有在不存在未解决的 `blocking` 暂存引用，综合评估为 `passed` 或 `completed_with_gaps`，并满足以下之一时才可标记 `completed`：一是 `distillStatus` 为 `written`、`conceptLinks` 非空且不存在 `proposed`、`conceptRelationPlans` 不存在 `proposed`、Topic Map 为 `linked` 或 `declined`；二是 `distillStatus` 为 `declined` 且 Topic Map 为 `not_applicable`。Concept Note 已写入但 `conceptLinks` 为空时必须创建 `link-knowledge` 审计动作；存在未完成的 `conceptRelationPlans` 时也必须保留对应动作，不能视为完成。`supporting` 暂存引用不阻塞 Quest 完成。
 - 恢复 Quest 时先检查 `waiting_on_deferred` 和未解决的 `blocking` 引用：存在时通过 `defer-concept` 展示恢复入口，不得直接评估。`waiting_return` 优先返回原节点并重新教学连接；之后 `clarifying` 才恢复疑问窗口，只有用户此前已经明确选择评估的 `awaiting_assessment` 和 `comprehensiveAssessment: pending` 才是评估待办。`assessed_with_gaps`、`completed_with_gaps` 以及旧的 `failed` 都不生成补测。随后按实际应用输出 → Distill → 新旧 Concept Note 双向关系 → Quest–Concept 双向链接 → Topic Map 的顺序处理。
