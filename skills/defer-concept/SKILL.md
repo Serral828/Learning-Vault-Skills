@@ -40,7 +40,7 @@ description: 暂存 Teach 中用户明确决定以后再学的概念，并支持
 ### 阻塞依赖
 
 - 在原节点的 `deferredDependencies` 中加入 Deferred ID、`blocking` 和 `parked`。
-- 原节点改为 `waiting_on_deferred`，禁止评估、直接放行、实际应用汇总和 Distill。
+- 原节点改为 `waiting_on_deferred`，后果见 [学习流程规则](../../docs/learning-flow.md) 第 7 节。
 - 原 Quest 还有不依赖该概念的节点时可以继续那些节点；没有时保留检查点并暂停 Quest。
 - 用户说“下一步”“可以通过”只表示离开或暂停这个受阻节点，不能把它改成 `validated`。
 - 恢复并完成对应正式学习 Quest 后，原节点回到 `teaching`，由 Teach 重新连接前置概念与主问题，再进入正常疑问和评估流程。

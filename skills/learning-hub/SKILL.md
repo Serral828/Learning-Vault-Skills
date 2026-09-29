@@ -10,7 +10,7 @@ description: 管理和恢复已有 Learning Quest 的跨会话状态与待办。
 ## 职责边界
 
 - 本 Skill 独占 `.learning/learning-progress.json` 的结构管理和合并写入。
-- `teach` 负责教学，在每个规划节点边界调用一次 `assess`；全部节点评估后组织实际应用输出和一次综合评估，评估结束即主动调用 `distill`，不因掌握缺口安排补测。
+- `teach` 负责教学和编排，节点评估、应用输出、综合评估与 Distill 的顺序及不补测规则见 [学习流程规则](../../docs/learning-flow.md)；本 Skill 只保存这些阶段的状态。
 - `defer-concept` 独占 `.learning/deferred-concepts.json`。本 Skill 只在节点中保存 Deferred ID、依赖影响和来源状态，并负责原 Quest、依赖 Quest 与返回动作之间的路由。
 - `review` 负责主动回忆、迁移评估和复习证据。
 - 本 Skill 只解析 Quest、保存状态、管理动作并路由到上述 Skill，不替代它们。
