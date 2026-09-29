@@ -1,3 +1,5 @@
+**声明：由于 skills 规则考虑有限，实际使用时需要充分发挥自身的主观能动性，对输出进行合理取舍。**
+
 # Learning Vault Skills
 
 ## 为什么开发这套 Skills

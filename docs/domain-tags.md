@@ -55,6 +55,7 @@ tags:
 | `domain/hardware` | 电子、电路、嵌入式、芯片、传感器、PCB |
 | `domain/data` | 数据库、数据工程、数据分析、数据治理 |
 | `domain/math` | 数学、统计、概率、逻辑与形式方法 |
+| `domain/systems` | 控制论、系统科学、信息论、复杂性与科学方法论 |
 | `domain/natural-science` | 物理、化学、生物、地球与空间科学 |
 | `domain/social-science` | 经济学、心理学、社会学、政治学与法学 |
 | `domain/humanities` | 历史、哲学、语言、文学与文化研究 |
