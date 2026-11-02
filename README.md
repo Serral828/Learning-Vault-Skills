@@ -69,6 +69,8 @@
 └── .trash/
 ```
 
+`.dsh/` 是当前存放 Skills 的工具目录。换用其他 Agent 时，这一层可能叫 `.agents/`、`.claude/` 之类的名字，`skills/`、`docs/`、`scripts/` 的内部结构不变；知识库目录和工具目录彼此独立，工具目录不参与正式知识管理。
+
 如果是新 Vault，在 Windows PowerShell 中执行：
 
 ```powershell
@@ -123,21 +125,27 @@ Agent 会自动调用 `init-vault` Skill 和初始化脚本，先在内部检查
 
 只有路径存在歧义、目标超出当前 Vault 或同时发现多个候选时，Agent 才会询问。完整说明见 [知识库结构初始化脚本](scripts/README.md)。
 
-### 2. Skill 不需要任何启用配置
+### 2. Skills 就是一组 Markdown 文件
 
-DeepSeek Harness 自动发现 `<Vault>/.dsh/skills/<name>/SKILL.md`，不需要 `settings.json`，不需要 `enableSkillCommands` 这类开关，也不需要预先声明工具清单。新增、删除或改名 Skill 目录后，目录清单会自动刷新。
+这套东西的实体是 `.dsh/skills/<name>/SKILL.md`，加上 `docs/` 里的详细规范和 `scripts/` 里的辅助脚本。它本身不绑定任何 Agent：每个 Skill 只是一个带 `name` 和 `description` frontmatter 的 Markdown，描述“什么时候用、按什么顺序做、做完要有什么证据”。
 
-命令写法是“斜杠 + Skill 名字”，例如 `/teach`、`/integrate-learning`，**没有 `skill:` 前缀**。写在句子中间的同一个 `/名字` 也会被识别。
+换 Agent 时只有三个外部约定可能不同，用之前对一下：
+
+- **放在哪个目录**：需要落在该 Agent 扫描的 Skill 根下，常见的是 `.dsh/skills/`、`.agents/skills/` 或用户级目录。本项目当前放在 `.dsh/skills/`。
+- **怎么触发**：多数 Agent 用“斜杠 + Skill 名字”，例如 `/teach`、`/integrate-learning`；有的需要先在设置里开启 Skill 命令，有的要求 `skill:` 前缀，按各自文档来。
+- **有哪些工具**：Skill 正文只假定“能读文件、能改文件、能执行命令、能检索”，具体工具名因 Agent 而异，不影响规则本身。
+
+如果你的 Agent 完全不支持 Skill 机制，也可以直接把某个 `SKILL.md` 全文贴进对话，规则同样生效。
 
 ### 3. 从 Vault 根目录启动
 
-DeepSeek Harness 的会话工作目录必须落在 Vault 上，而且不能在 `.dsh/` 内部启动：
+会话的工作目录要落在 Vault 上：
 
 ```powershell
 Set-Location -LiteralPath 'E:\Document\Vault'
 ```
 
-`.dsh/` 自己就是一个 Git 仓库；在它内部启动会把项目根判定成 `.dsh/`，于是 `.dsh/skills` 找不到，`/teach` 之类命令也不会出现。Agent 应直接运行在 Windows 中，以 Vault 为当前目录，并使用 Windows 原生 PowerShell。
+Agent 通常用“当前目录或最近的 Git 根”来确定项目范围，再从这里寻找 Skill 目录。不要在存放 Skills 的工具目录内部启动：`.dsh/` 自己就是一个独立 Git 仓库，从它里面启动会把项目根判成 `.dsh/`，Skill 目录和笔记路径都会对不上。建议直接运行在 Windows 中，以 Vault 为当前目录，并使用 Windows 原生 PowerShell。
 
 ## 快速上手 A：整理原始笔记
 
@@ -812,10 +820,11 @@ Agent 会说明它是阻塞依赖还是辅助知识及其理由。阻塞依赖�
 
 依次检查：
 
-1. 是否从 Vault 根目录启动（不要在 `.dsh/` 里启动）；
-2. Skill 是否位于 `<Vault>/.dsh/skills/<name>/SKILL.md`，且 frontmatter 里有 `name` 和 `description`；
-3. `name` 是否为 kebab-case，并与目录名一致；
-4. 是否写成了旧的 `/skill:teach`——DeepSeek Harness 只认 `/teach`。
+1. 会话工作目录是否在 Vault 根目录（不要在存放 Skills 的工具目录里启动）；
+2. Skill 是否在 Agent 扫描的 Skill 根下，例如 `<Vault>/.dsh/skills/<name>/SKILL.md`；
+3. 该 `SKILL.md` 的 frontmatter 是否有 `name` 和 `description`，`name` 是否为 kebab-case 且与目录名一致；
+4. 触发写法是否符合你所用 Agent 的约定（斜杠加名字、`skill:` 前缀，或需要先在设置里开启）；
+5. 目录改动后清单是否已刷新（有些 Agent 需要重开会话）。
 
 ### 怎样确认使用的是 Windows 原生 PowerShell？
 
