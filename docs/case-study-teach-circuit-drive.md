@@ -194,7 +194,7 @@
 
 **用户**
 
-> `/skill:defer-concept 电压跟随器`
+> `/defer-concept 电压跟随器`
 
 **Agent**
 
@@ -214,7 +214,7 @@
 > 以后恢复：
 >
 > ```text
-> /skill:defer-concept resume DC-001
+> /defer-concept resume DC-001
 > ```
 
 如果用户没有明确说“暂存”或调用 Skill，只说“没听懂”，Agent 应继续换角度解释，不自动暂存。
@@ -286,7 +286,7 @@
 
 **用户**
 
-> `/skill:learning-hub list`
+> `/learning-hub list`
 
 **Agent**
 
@@ -302,11 +302,11 @@
 查看单个 Quest：
 
 ```text
-/skill:learning-hub show LQ-20260831-DR01
+/learning-hub show LQ-20260831-DR01
 ```
 
 如果 Quest 尚未完成：
 
 ```text
-/skill:learning-hub continue LQ-20260831-DR01
+/learning-hub continue LQ-20260831-DR01
 ```

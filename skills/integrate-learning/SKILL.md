@@ -14,8 +14,8 @@ description: 忠实整理用户明确指定的 00-原始笔记 Markdown。只处
 要求用户给出 Vault 相对路径，例如：
 
 ```text
-/skill:integrate-learning 00-原始笔记/高速PCB.md
-/skill:integrate-learning 00-原始笔记/STM32/
+/integrate-learning 00-原始笔记/高速PCB.md
+/integrate-learning 00-原始笔记/STM32/
 ```
 
 执行前必须：
@@ -224,4 +224,4 @@ Agent 不依赖直接识图，只依据括号中的用户说明判断图片表�
 6. 移动 Markdown 前验证其中所有图片引用在新位置仍可解析；相对引用会失效、附件缺失或会产生孤立附件时停止清理并报告，不静默改写或移动图片。
 7. 清理后再次核对原路径、回收路径、图片引用和输入清单，并报告结果。
 
-本 Skill 永不永久删除输入，也不自动清空 `.trash/`。永久清空只能由 `/skill:purge-trash` 或用户明确的清空命令触发。
+本 Skill 永不永久删除输入，也不自动清空 `.trash/`。永久清空只能由 `/purge-trash` 或用户明确的清空命令触发。

@@ -12,11 +12,11 @@ description: 暂存 Teach 中用户明确决定以后再学的概念，并支持
 ## 用户入口
 
 ```text
-/skill:defer-concept <概念>
-/skill:defer-concept list
-/skill:defer-concept show <Deferred ID 或概念名>
-/skill:defer-concept resume <Deferred ID 或概念名>
-/skill:defer-concept cancel <Deferred ID 或概念名>
+/defer-concept <概念>
+/defer-concept list
+/defer-concept show <Deferred ID 或概念名>
+/defer-concept resume <Deferred ID 或概念名>
+/defer-concept cancel <Deferred ID 或概念名>
 ```
 
 也接受“这个概念现阶段无法理解，先暂存”“以后再专门学习这个概念”等明确表达。
@@ -94,5 +94,5 @@ description: 暂存 Teach 中用户明确决定以后再学的概念，并支持
 来源：<Quest ID> / <节点>
 影响：<阻塞依赖|辅助知识> — <判断理由>
 当前处理：<节点暂停并可继续其他节点|原节点继续且评估排除该概念>
-以后恢复：/skill:defer-concept resume <Deferred ID>
+以后恢复：/defer-concept resume <Deferred ID>
 ```

@@ -5,7 +5,7 @@ Teach 默认先正常讲解。普通的“没听懂”“再举个例子”会�
 只有用户明确决定以后再学时，才调用：
 
 ```text
-/skill:defer-concept <概念>
+/defer-concept <概念>
 ```
 
 系统会保存概念、来源 Quest、当前节点、引入原因、已经讲过的内容、已有实例、卡点和返回位置，并判断该来源是阻塞依赖还是辅助知识。
@@ -23,10 +23,10 @@ Teach 默认先正常讲解。普通的“没听懂”“再举个例子”会�
 ## 管理命令
 
 ```text
-/skill:defer-concept list
-/skill:defer-concept show DC-001
-/skill:defer-concept resume DC-001
-/skill:defer-concept cancel DC-001
+/defer-concept list
+/defer-concept show DC-001
+/defer-concept resume DC-001
+/defer-concept cancel DC-001
 ```
 
 暂存不是掌握证据，不生成 Concept Note、Topic Map 或复习任务。恢复时会创建或继续一个正式 Learning Quest，完成后再处理与原问题的返回关系。

@@ -69,9 +69,9 @@ function assertSafeVaultRoot(vaultRoot) {
     throw new Error(`拒绝把文件系统根目录作为 Vault：${vaultRoot}`);
   }
 
-  if (path.basename(vaultRoot).toLowerCase() === ".pi") {
+  if (path.basename(vaultRoot).toLowerCase() === ".dsh") {
     throw new Error(
-      `目标应是知识库根目录，而不是 .pi 目录：${vaultRoot}`,
+      `目标应是知识库根目录，而不是 .dsh 目录：${vaultRoot}`,
     );
   }
 }
@@ -113,10 +113,10 @@ export async function initializeVault({
   }
 
   const warnings = [];
-  const expectedPiDirectory = path.join(vaultRoot, ".pi");
-  if ((await getPathType(expectedPiDirectory)) !== "directory") {
+  const expectedDshDirectory = path.join(vaultRoot, ".dsh");
+  if ((await getPathType(expectedDshDirectory)) !== "directory") {
     warnings.push(
-      `目标中未检测到 .pi/：${expectedPiDirectory}。脚本只生成知识库结构，不复制 Skills。`,
+      `目标中未检测到 .dsh/：${expectedDshDirectory}。脚本只生成知识库结构，不复制 Skills。`,
     );
   }
 
@@ -181,14 +181,14 @@ export async function initializeVault({
     }
   }
 
-  const piDirectoryDetected =
-    (await getPathType(expectedPiDirectory)) === "directory";
+  const dshDirectoryDetected =
+    (await getPathType(expectedDshDirectory)) === "directory";
 
   return {
     ok: true,
     dryRun,
     vaultRoot,
-    piDirectoryDetected,
+    dshDirectoryDetected,
     directories,
     files,
     summary: createSummary(directories, files),
@@ -250,10 +250,10 @@ function helpText() {
   return `生成 Learning Vault 推荐目录和初始状态文件
 
 用法：
-  node .pi/scripts/init-vault.mjs [选项]
+  node .dsh/scripts/init-vault.mjs [选项]
 
 选项：
-  --root <路径>  指定知识库根目录；默认使用脚本所在 .pi 的父目录
+  --root <路径>  指定知识库根目录；默认使用脚本所在 .dsh 的父目录
   --dry-run      只预览，不创建任何目录或文件
   --no-state     只创建目录，不初始化 .learning/*.json
   --json         输出便于 Agent 读取的 JSON 结果
@@ -262,7 +262,7 @@ function helpText() {
 安全行为：
   - 可以重复运行；已有目录和文件保持不变
   - 永不覆盖已有状态文件
-  - 拒绝把磁盘根目录或 .pi 本身作为目标
+  - 拒绝把磁盘根目录或 .dsh 本身作为目标
 `;
 }
 

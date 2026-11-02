@@ -17,7 +17,7 @@ description: 把 Teach 中完成讲解、应用和综合评估的知识整理为
 
 ## 编排触发
 
-- 由 `teach` 的收束审计主动调用（流程规则第 10 节），用户不需要另发 `/skill:distill`。接收到综合评估 `passed` 或 `completed_with_gaps` 且 `distillReady: true` 的结果后，直接进入查重和草稿流程。
+- 由 `teach` 的收束审计主动调用（流程规则第 10 节），用户不需要另发 `/distill`。接收到综合评估 `passed` 或 `completed_with_gaps` 且 `distillReady: true` 的结果后，直接进入查重和草稿流程。
 - 即使局部证据很强，也不能在 Quest 综合评估前提前整理。
 - 展示完整草稿并请求确认是 Distill 提案本身；用户确认后才落盘。
 - 用户没时间查看草稿，或拒绝晋升（记为 `declined`）时，按流程规则第 10 节处理。

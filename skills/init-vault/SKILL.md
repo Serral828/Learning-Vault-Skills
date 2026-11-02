@@ -5,25 +5,25 @@ description: 检查或补齐 Learning Vault 推荐目录和初始状态文件。
 
 # Init Vault
 
-使用 `.pi/scripts/init-vault.mjs` 检查或生成推荐的知识库结构。用户表达目标即可，Agent 负责定位和调用脚本，不得要求用户复制脚本命令。
+使用 `.dsh/scripts/init-vault.mjs` 检查或生成推荐的知识库结构。用户表达目标即可，Agent 负责定位和调用脚本，不得要求用户复制脚本命令。
 
 ## 意图判断
 
 - 用户说“初始化”“创建”“生成”“补齐”等明确写入表达：视为授权在目标 Vault 内创建脚本预览中缺失的目录和初始状态文件。
 - 用户只说“检查”“看看是否完整”“预览”等只读表达：只运行预览，不写入。
-- 用户指定 Vault 路径时使用该路径；没有指定时，优先使用当前 Vault 根目录中的 `.pi/scripts/init-vault.mjs`，脚本会把自身所在 `.pi/` 的父目录识别为目标。
-- 同时存在多个可能的 `.pi/`、用户给出的路径不是 Vault 根目录，或预览目标超出当前 Vault 时，先展示候选并询问一个简短问题，不猜测。
+- 用户指定 Vault 路径时使用该路径；没有指定时，优先使用当前 Vault 根目录中的 `.dsh/scripts/init-vault.mjs`，脚本会把自身所在 `.dsh/` 的父目录识别为目标。
+- 同时存在多个可能的 `.dsh/`、用户给出的路径不是 Vault 根目录，或预览目标超出当前 Vault 时，先展示候选并询问一个简短问题，不猜测。
 
 ## 自动执行流程
 
-1. 确认 `.pi/scripts/init-vault.mjs` 存在；不存在时报告缺失，不临时拼凑另一套目录命令。
+1. 确认 `.dsh/scripts/init-vault.mjs` 存在；不存在时报告缺失，不临时拼凑另一套目录命令。
 2. Agent 自动运行：
 
    ```text
-   node .pi/scripts/init-vault.mjs --dry-run --json
+   node .dsh/scripts/init-vault.mjs --dry-run --json
    ```
 
-   如果 Agent 当前就在 `.pi/`，使用等价的 `node scripts/init-vault.mjs --dry-run --json`。
+   如果 Agent 当前就在 `.dsh/`，使用等价的 `node scripts/init-vault.mjs --dry-run --json`。
 3. 解析 JSON，确认 `vaultRoot` 是预期 Vault、没有失败，并检查将创建的项目：
    - 目标是当前明确的 Vault，且用户已经说“初始化/创建/补齐”：直接进入正式执行，不再要求用户确认命令；
    - 用户只要求检查：报告缺失项并结束；
@@ -49,7 +49,7 @@ description: 检查或补齐 Learning Vault 推荐目录和初始状态文件。
 
 - 本 Skill 只允许调用仓库现有的 `init-vault.mjs`，不自行执行批量移动、删除、重命名或覆盖命令。
 - 脚本是幂等的，已有目录和状态文件保持不变；Agent 不使用额外参数绕过这一保护。
-- 不把 `.pi/` 本身、Windows 盘符根目录或 Linux 文件系统根目录作为 Vault。
+- 不把 `.dsh/` 本身、Windows 盘符根目录或 Linux 文件系统根目录作为 Vault。
 - 用户明确要求初始化当前 Vault，已足以授权创建预览中的缺失项；不要重复询问“是否运行这条命令”。
 - 初始化其他 Vault 时，如果绝对路径由用户明确给出，可以直接执行；路径由 Agent 推断或存在歧义时必须先确认。
-- 本 Skill 不安装或复制 `.pi/`。目标缺少 `.pi/` 时，只报告脚本给出的提醒。
+- 本 Skill 不安装或复制 `.dsh/`。目标缺少 `.dsh/` 时，只报告脚本给出的提醒。

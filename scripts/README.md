@@ -1,10 +1,10 @@
 # 知识库结构初始化脚本
 
-`init-vault.mjs` 用来生成本项目推荐的 Learning Vault 目录结构。它不复制 `.pi/`、不安装依赖，也不修改已有笔记。
+`init-vault.mjs` 用来生成本项目推荐的 Learning Vault 目录结构。它不复制 `.dsh/`、不安装依赖，也不修改已有笔记。
 
 ## 默认生成内容
 
-脚本默认以自身所在 `.pi/` 的父目录为 Vault 根目录，创建缺失的目录：
+脚本默认以自身所在 `.dsh/` 的父目录为 Vault 根目录，创建缺失的目录：
 
 ```text
 00-原始笔记/
@@ -34,16 +34,16 @@
 在 Vault 根目录先预览：
 
 ```powershell
-node .pi/scripts/init-vault.mjs --dry-run
+node .dsh/scripts/init-vault.mjs --dry-run
 ```
 
 确认输出中的绝对目标路径正确，再正式执行：
 
 ```powershell
-node .pi/scripts/init-vault.mjs
+node .dsh/scripts/init-vault.mjs
 ```
 
-如果当前目录是 `.pi/`：
+如果当前目录是 `.dsh/`：
 
 ```powershell
 node scripts/init-vault.mjs --dry-run
@@ -91,24 +91,24 @@ Agent 会自动调用 `init-vault` Skill，由 Skill 负责定位和运行本脚
 指定其他 Vault：
 
 ```powershell
-node .pi/scripts/init-vault.mjs --root 'D:\Notes\MyVault' --dry-run
-node .pi/scripts/init-vault.mjs --root 'D:\Notes\MyVault'
+node .dsh/scripts/init-vault.mjs --root 'D:\Notes\MyVault' --dry-run
+node .dsh/scripts/init-vault.mjs --root 'D:\Notes\MyVault'
 ```
 
-若目标中没有 `.pi/`，脚本会给出提醒，但仍可创建知识目录；它不会把当前 Skills 复制到目标中。
+若目标中没有 `.dsh/`，脚本会给出提醒，但仍可创建知识目录；它不会把当前 Skills 复制到目标中。
 
 ## 安全行为
 
 - 重复运行是安全的：已有目录报告为 `existing`；
 - 使用独占创建方式写入状态文件，执行期间即使文件被其他进程创建，也不会覆盖；
-- 路径应是 Vault 根目录，不能传入 `.pi/` 本身；
+- 路径应是 Vault 根目录，不能传入 `.dsh/` 本身；
 - 拒绝把 Windows 盘符根目录或 Linux 文件系统根目录作为目标；
 - 不删除、移动、重命名任何现有内容；
 - 不创建 `.gitkeep`，因此空目录不会自动进入 Git 提交，但会保留在本地文件系统中。
 
 ## 验证脚本
 
-在 `.pi/` 目录运行：
+在 `.dsh/` 目录运行：
 
 ```powershell
 node --test scripts/init-vault.test.mjs

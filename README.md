@@ -28,19 +28,19 @@
 | 你的目标 | 直接输入 |
 | --- | --- |
 | 初始化或检查知识库结构 | `帮我初始化推荐的知识库结构` |
-| 学习一个新问题 | `/skill:teach <你最终想做到什么>` |
-| 整理自己已经写好的笔记 | `/skill:integrate-learning <00-原始笔记下的相对路径>` |
-| 恢复以前没有完成的学习 | `/skill:learning-hub list` |
-| 暂存现阶段学不动的概念 | `/skill:defer-concept <概念>` |
+| 学习一个新问题 | `/teach <你最终想做到什么>` |
+| 整理自己已经写好的笔记 | `/integrate-learning <00-原始笔记下的相对路径>` |
+| 恢复以前没有完成的学习 | `/learning-hub list` |
+| 暂存现阶段学不动的概念 | `/defer-concept <概念>` |
 
 最常用的两个例子：
 
 ```text
-/skill:teach 我想理解 PID，并能够诊断两轮平衡车的振荡问题
+/teach 我想理解 PID，并能够诊断两轮平衡车的振荡问题
 ```
 
 ```text
-/skill:integrate-learning 00-原始笔记/机器学习/
+/integrate-learning 00-原始笔记/机器学习/
 ```
 
 ## 5 分钟准备
@@ -51,11 +51,10 @@
 
 ```text
 你的知识库/
-├── .pi/
+├── .dsh/
 │   ├── docs/
 │   ├── scripts/
 │   │   └── init-vault.mjs
-│   ├── settings.json
 │   └── skills/
 ├── 00-原始笔记/
 ├── 01-学习问题/
@@ -74,24 +73,24 @@
 
 ```powershell
 Set-Location -LiteralPath 'C:\path\to\your-vault'
-git clone https://github.com/Serral828/Learning-Vault-Skills.git .pi
+git clone https://github.com/Serral828/Learning-Vault-Skills.git .dsh
 ```
 
-如果已经有 `.pi/`，不要直接覆盖。合并本仓库的 `skills/`、`docs/` 和 `scripts/`，并检查现有配置。
+如果已经有 `.dsh/`，不要直接覆盖。合并本仓库的 `skills/`、`docs/` 和 `scripts/`，并检查现有配置。
 
 仓库准备好后，不需要手工逐个创建目录。在 Vault 根目录先预览：
 
 ```powershell
-node .pi/scripts/init-vault.mjs --dry-run
+node .dsh/scripts/init-vault.mjs --dry-run
 ```
 
 确认目标正确后正式生成：
 
 ```powershell
-node .pi/scripts/init-vault.mjs
+node .dsh/scripts/init-vault.mjs
 ```
 
-如果当前目录就是 `.pi/`，对应命令是 `node scripts/init-vault.mjs`。脚本默认把自身所在 `.pi/` 的父目录识别为 Vault 根目录，创建推荐目录，并在文件尚不存在时初始化：
+如果当前目录就是 `.dsh/`，对应命令是 `node scripts/init-vault.mjs`。脚本默认把自身所在 `.dsh/` 的父目录识别为 Vault 根目录，创建推荐目录，并在文件尚不存在时初始化：
 
 ```text
 .learning/learning-progress.json
@@ -124,41 +123,21 @@ Agent 会自动调用 `init-vault` Skill 和初始化脚本，先在内部检查
 
 只有路径存在歧义、目标超出当前 Vault 或同时发现多个候选时，Agent 才会询问。完整说明见 [知识库结构初始化脚本](scripts/README.md)。
 
-### 2. 启用 Skill 命令
+### 2. Skill 不需要任何启用配置
 
-`.pi/settings.json` 至少包含：
+DeepSeek Harness 自动发现 `<Vault>/.dsh/skills/<name>/SKILL.md`，不需要 `settings.json`，不需要 `enableSkillCommands` 这类开关，也不需要预先声明工具清单。新增、删除或改名 Skill 目录后，目录清单会自动刷新。
 
-```json
-{
-  "enableSkillCommands": true
-}
-```
-
-需要显式配置工具时，可以使用：
-
-```json
-{
-  "enableSkillCommands": true,
-  "defaultTools": [
-    "read",
-    "powershell",
-    "edit",
-    "write",
-    "grep",
-    "find",
-    "ls"
-  ]
-}
-```
+命令写法是“斜杠 + Skill 名字”，例如 `/teach`、`/integrate-learning`，**没有 `skill:` 前缀**。写在句子中间的同一个 `/名字` 也会被识别。
 
 ### 3. 从 Vault 根目录启动
 
+DeepSeek Harness 的会话工作目录必须落在 Vault 上，而且不能在 `.dsh/` 内部启动：
+
 ```powershell
 Set-Location -LiteralPath 'E:\Document\Vault'
-pi.cmd
 ```
 
-不要从 `.pi/` 子目录或 WSL 启动。Agent 应直接运行在 Windows 中，以 Vault 为当前目录，并使用 Windows 原生 PowerShell。
+`.dsh/` 自己就是一个 Git 仓库；在它内部启动会把项目根判定成 `.dsh/`，于是 `.dsh/skills` 找不到，`/teach` 之类命令也不会出现。Agent 应直接运行在 Windows 中，以 Vault 为当前目录，并使用 Windows 原生 PowerShell。
 
 ## 快速上手 A：整理原始笔记
 
@@ -232,13 +211,13 @@ Agent 会为每张表分配 Table ID，并在计划中展示它将被原样保�
 指定单篇笔记：
 
 ```text
-/skill:integrate-learning 00-原始笔记/机器学习/KNN.md
+/integrate-learning 00-原始笔记/机器学习/KNN.md
 ```
 
 指定整个目录：
 
 ```text
-/skill:integrate-learning 00-原始笔记/机器学习/
+/integrate-learning 00-原始笔记/机器学习/
 ```
 
 ### 第 4 步：Agent 先盘点，不立即写入
@@ -364,7 +343,7 @@ Agent 可以重组、去重、调整措辞、拆分笔记和增加结构性标�
 这只是可恢复移动，不是永久删除。图片等非 Markdown 附件不会被静默移动或删除。永久清空只能由你明确调用：
 
 ```text
-/skill:purge-trash
+/purge-trash
 ```
 
 ## 快速上手 B：从一个真实问题开始学习
@@ -374,7 +353,7 @@ Agent 可以重组、去重、调整措辞、拆分笔记和增加结构性标�
 比起“学习 PID”，更推荐写清楚实际能力：
 
 ```text
-/skill:teach 我想让两轮平衡车保持直立。我会写单片机代码，但控制理论基础较弱，希望最后能诊断振荡和响应迟缓。
+/teach 我想让两轮平衡车保持直立。我会写单片机代码，但控制理论基础较弱，希望最后能诊断振荡和响应迟缓。
 ```
 
 `teach` 会创建或复用一个稳定的 Quest ID，确认你的已有基础，并生成完成当前目标所需的最小路径。例如：
@@ -398,7 +377,7 @@ Teach 会先正常解释节点知识和相关概念，不会根据猜测自动�
 如果某个重要概念现阶段确实学不动，并且你决定以后再专门学习，可以主动暂存：
 
 ```text
-/skill:defer-concept 电压跟随器
+/defer-concept 电压跟随器
 ```
 
 Agent 会保存它来自哪个 Quest 和节点、为什么被引入、已经讲过什么、当前卡点以及以后应回到哪里，并说明它在本次问题中属于：
@@ -457,13 +436,13 @@ Agent 会对整体成果做一次综合评估，记录为 `passed` 或 `complete
 新会话中输入：
 
 ```text
-/skill:learning-hub list
+/learning-hub list
 ```
 
 或者直接继续：
 
 ```text
-/skill:learning-hub continue <Quest ID 或标题>
+/learning-hub continue <Quest ID 或标题>
 ```
 
 开始新的学习项目不会覆盖旧 Quest；旧的待办仍然保留。
@@ -491,17 +470,17 @@ Agent 会对整体成果做一次综合评估，记录为 `passed` 或 `complete
 
 | 你现在想做什么 | 命令 | Skill |
 | --- | --- | --- |
-| 初始化、补齐或检查 Vault 结构 | 直接说“帮我初始化知识库结构”，或使用 `/skill:init-vault` | `init-vault` |
-| 从真实问题开始学习 | `/skill:teach <目标>` | `teach` |
-| 查看或恢复学习项目 | `/skill:learning-hub <动作> <Quest ID>` | `learning-hub` |
-| 暂存或恢复现阶段学不动的概念 | `/skill:defer-concept <概念或动作>` | `defer-concept` |
-| 单独检查自己会不会用 | `/skill:assess <能力>` | `assess` |
-| 核查事实、公式、定义或来源 | `/skill:verify <断言>` | `verify` |
-| 整理已经完成教学流程的知识 | `/skill:distill <概念>` | `distill` |
-| 整理自己以前写的 Markdown | `/skill:integrate-learning <相对路径>` | `integrate-learning` |
-| 给现有知识建立语义关系 | `/skill:link-knowledge <范围>` | `link-knowledge` |
-| 根据遗忘和历史错误复习 | `/skill:review <可选范围>` | `review` |
-| 永久清空 `.trash/` | `/skill:purge-trash` | `purge-trash` |
+| 初始化、补齐或检查 Vault 结构 | 直接说“帮我初始化知识库结构”，或使用 `/init-vault` | `init-vault` |
+| 从真实问题开始学习 | `/teach <目标>` | `teach` |
+| 查看或恢复学习项目 | `/learning-hub <动作> <Quest ID>` | `learning-hub` |
+| 暂存或恢复现阶段学不动的概念 | `/defer-concept <概念或动作>` | `defer-concept` |
+| 单独检查自己会不会用 | `/assess <能力>` | `assess` |
+| 核查事实、公式、定义或来源 | `/verify <断言>` | `verify` |
+| 整理已经完成教学流程的知识 | `/distill <概念>` | `distill` |
+| 整理自己以前写的 Markdown | `/integrate-learning <相对路径>` | `integrate-learning` |
+| 给现有知识建立语义关系 | `/link-knowledge <范围>` | `link-knowledge` |
+| 根据遗忘和历史错误复习 | `/review <可选范围>` | `review` |
+| 永久清空 `.trash/` | `/purge-trash` | `purge-trash` |
 
 `teach` 会在一次学习中自行编排 `verify`、`assess`、`distill` 和 `link-knowledge`。你不需要手工依次调用它们。
 
@@ -520,7 +499,7 @@ Agent 会对整体成果做一次综合评估，记录为 `passed` 或 `complete
 | `99-归档/` | 不再活跃但仍需保留的内容 |
 | `.learning/` | Quest、掌握状态和复习队列 |
 | `.trash/` | 已整合输入的可恢复暂存 |
-| `.pi/skills/` | Agent 行为规则 |
+| `.dsh/skills/` | Agent 行为规则 |
 
 ## 正式知识会如何组织
 
@@ -672,7 +651,7 @@ tag:#map
 第一次不知道该执行什么时，直接输入：
 
 ```text
-/skill:learning-hub list
+/learning-hub list
 ```
 
 它会同时列出：
@@ -686,14 +665,14 @@ tag:#map
 
 | 命令 | 用途 | 什么时候用 |
 | --- | --- | --- |
-| `/skill:learning-hub list` | 查看全局学习总览和暂存概念摘要 | 不确定下一步、换了新会话或想检查旧待办时 |
-| `/skill:learning-hub show <ID或标题>` | 查看一个 Quest 的目标、位置、证据、待办和相关暂存概念 | 想先了解状态但不立即继续时 |
-| `/skill:learning-hub continue <ID或标题>` | 从原检查点继续同一个 Quest | 上次尚未完成教学、评估、输出或 Distill 时 |
-| `/skill:learning-hub extend <ID或标题>` | 从已完成 Quest 创建相邻的新学习目标 | 原问题已完成，准备学习延伸主题时 |
-| `/skill:learning-hub review <ID或标题>` | 复习已经形成掌握证据的内容 | 想进行回忆和迁移练习时 |
-| `/skill:learning-hub pause <ID或标题>` | 暂停 Quest，但保留检查点和待办 | 现在没时间继续时 |
-| `/skill:learning-hub archive <ID或标题>` | 停止主动提醒，但保留历史 | 确定暂时不再推进该 Quest 时 |
-| `/skill:learning-hub deferred` | 查看完整的待学习概念清单 | 专门整理阻塞依赖和辅助知识时 |
+| `/learning-hub list` | 查看全局学习总览和暂存概念摘要 | 不确定下一步、换了新会话或想检查旧待办时 |
+| `/learning-hub show <ID或标题>` | 查看一个 Quest 的目标、位置、证据、待办和相关暂存概念 | 想先了解状态但不立即继续时 |
+| `/learning-hub continue <ID或标题>` | 从原检查点继续同一个 Quest | 上次尚未完成教学、评估、输出或 Distill 时 |
+| `/learning-hub extend <ID或标题>` | 从已完成 Quest 创建相邻的新学习目标 | 原问题已完成，准备学习延伸主题时 |
+| `/learning-hub review <ID或标题>` | 复习已经形成掌握证据的内容 | 想进行回忆和迁移练习时 |
+| `/learning-hub pause <ID或标题>` | 暂停 Quest，但保留检查点和待办 | 现在没时间继续时 |
+| `/learning-hub archive <ID或标题>` | 停止主动提醒，但保留历史 | 确定暂时不再推进该 Quest 时 |
+| `/learning-hub deferred` | 查看完整的待学习概念清单 | 专门整理阻塞依赖和辅助知识时 |
 
 `continue`、`extend` 和 `review` 不相同：
 
@@ -717,23 +696,23 @@ tag:#map
 待学习概念
 - [阻塞] DC-001  电压跟随器
   来源：LQ-20260831-A1B2 / 缓冲级如何提高驱动能力
-  恢复：/skill:defer-concept resume DC-001
+  恢复：/defer-concept resume DC-001
 - [辅助] DC-002  运放压摆率
   来源：LQ-20260831-A1B2 / 电压跟随器的工程边界
-  恢复：/skill:defer-concept resume DC-002
+  恢复：/defer-concept resume DC-002
 ```
 
 辅助知识不会因为原 Quest 完成或归档而从这个区域消失。`learning-hub list` 提供总览；需要查看当时讲过什么、卡在哪里和返回位置时使用：
 
 ```text
-/skill:defer-concept show DC-002
+/defer-concept show DC-002
 ```
 
 只想查看所有暂存概念，可以使用下面任意一个入口：
 
 ```text
-/skill:learning-hub deferred
-/skill:defer-concept list
+/learning-hub deferred
+/defer-concept list
 ```
 
 ### 典型恢复流程
@@ -741,14 +720,14 @@ tag:#map
 继续一个普通 Quest：
 
 ```text
-/skill:learning-hub list
-/skill:learning-hub continue LQ-20260831-A1B2
+/learning-hub list
+/learning-hub continue LQ-20260831-A1B2
 ```
 
 恢复阻塞依赖或辅助知识：
 
 ```text
-/skill:defer-concept resume DC-001
+/defer-concept resume DC-001
 ```
 
 恢复暂存概念时会创建或复用一个正式依赖 Quest，并交给 `teach` 正常教学。依赖 Quest 完成后，阻塞来源会生成“返回原 Quest/节点”的动作；辅助来源不会要求重做已经完成的原节点。
@@ -799,44 +778,44 @@ tag:#map
 
 ### 学习结束时没时间处理后续动作怎么办？
 
-不用当场选择。下次输入 `/skill:learning-hub list`，未完成的 Distill、关系、Topic Map、延伸和复习动作都会保留。
+不用当场选择。下次输入 `/learning-hub list`，未完成的 Distill、关系、Topic Map、延伸和复习动作都会保留。
 
 ### 当前解释依赖一个我还听不懂的概念怎么办？
 
 如果你还想继续理解，直接追问即可，Teach 会继续换角度解释。只有你决定“现阶段先不学”时才调用：
 
 ```text
-/skill:defer-concept <概念>
+/defer-concept <概念>
 ```
 
 例如：
 
 ```text
-/skill:defer-concept 电压跟随器
+/defer-concept 电压跟随器
 ```
 
 Agent 会说明它是阻塞依赖还是辅助知识及其理由。阻塞依赖会暂停相关节点；辅助知识不会阻止原节点继续。以后使用下面的命令找回：
 
 ```text
-/skill:learning-hub list
-/skill:learning-hub deferred
-/skill:defer-concept list
-/skill:defer-concept show DC-001
-/skill:defer-concept resume DC-001
+/learning-hub list
+/learning-hub deferred
+/defer-concept list
+/defer-concept show DC-001
+/defer-concept resume DC-001
 ```
 
 `learning-hub list` 的“待学习概念”区域会持续显示辅助项；即使来源 Quest 已经完成或归档，它也不会自动消失。
 
 恢复时会创建或继续一个正式 Learning Quest，完成后再返回原阻塞节点；不会把暂存时听过的内容当成已经掌握。
 
-### `/skill:...` 没有出现或无法识别怎么办？
+### `/名字` 没有出现或无法识别怎么办？
 
 依次检查：
 
-1. 是否从 Vault 根目录启动；
-2. Skill 是否位于 `<Vault>/.pi/skills/<name>/SKILL.md`；
-3. `.pi/settings.json` 是否设置 `enableSkillCommands: true`；
-4. 修改后是否重启了 Agent。
+1. 是否从 Vault 根目录启动（不要在 `.dsh/` 里启动）；
+2. Skill 是否位于 `<Vault>/.dsh/skills/<name>/SKILL.md`，且 frontmatter 里有 `name` 和 `description`；
+3. `name` 是否为 kebab-case，并与目录名一致；
+4. 是否写成了旧的 `/skill:teach`——DeepSeek Harness 只认 `/teach`。
 
 ### 怎样确认使用的是 Windows 原生 PowerShell？
 

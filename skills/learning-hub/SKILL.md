@@ -56,14 +56,14 @@ tags:
 支持标题或 ID；存在歧义时优先显示短列表让用户选择，不猜测。
 
 ```text
-/skill:learning-hub list
-/skill:learning-hub show <Quest ID 或标题>
-/skill:learning-hub continue <Quest ID 或标题>
-/skill:learning-hub extend <Quest ID 或标题>
-/skill:learning-hub review <Quest ID 或标题>
-/skill:learning-hub pause <Quest ID 或标题>
-/skill:learning-hub archive <Quest ID 或标题>
-/skill:learning-hub deferred
+/learning-hub list
+/learning-hub show <Quest ID 或标题>
+/learning-hub continue <Quest ID 或标题>
+/learning-hub extend <Quest ID 或标题>
+/learning-hub review <Quest ID 或标题>
+/learning-hub pause <Quest ID 或标题>
+/learning-hub archive <Quest ID 或标题>
+/learning-hub deferred
 ```
 
 ### `list` 与 `show`
@@ -77,7 +77,7 @@ tags:
 
 用于尚未完成当前收尾或完成标准的 Quest。读取节点状态和掌握证据，简短说明上次停在哪里，并按以下优先级恢复：
 
-1. 当前节点为 `waiting_on_deferred`，或存在未解决的 `blocking` 暂存引用：通过 `defer-concept` 展示概念快照和 `/skill:defer-concept resume <ID>`。用户要求恢复时路由到该 Skill；不得自动评估或直接通过原节点。
+1. 当前节点为 `waiting_on_deferred`，或存在未解决的 `blocking` 暂存引用：通过 `defer-concept` 展示概念快照和 `/defer-concept resume <ID>`。用户要求恢复时路由到该 Skill；不得自动评估或直接通过原节点。
 2. 依赖 Quest 已完成且暂存来源为 `waiting_return`：把原节点改回 `teaching`，交给 `teach` 重新解释前置概念与主问题的联系，并通过 `defer-concept` 把该来源改为 `resolved`。
 3. 当前节点为 `clarifying`：交给 `teach` 恢复该节点的疑问窗口，不能自动开始评估。
 4. 当前节点为 `awaiting_assessment`：说明用户此前已经明确选择评估，再交给 `teach` 调用 `assess`。
@@ -132,11 +132,11 @@ tags:
 
 本 Skill 合并写入状态，并按优先级生成最多两个主要未来动作：
 
-1. **完成当前收尾**：按“待解决的阻塞暂存依赖 → 待返回原节点 → 待疑问澄清 → 待首次节点评估 → 待实际应用输出 → 待首次综合评估 → 待 Distill → 待新旧 Concept Note 双向关系 → 待 Quest–Concept 双向链接 → 待 Topic Map”的顺序，为最早未执行阶段创建 `continue`、`distill`、`link-knowledge` 或 `topic-map` 动作。阻塞暂存动作的展示命令使用 `/skill:defer-concept resume <ID>`；评估已有结果但带缺口时不创建补测动作。
+1. **完成当前收尾**：按“待解决的阻塞暂存依赖 → 待返回原节点 → 待疑问澄清 → 待首次节点评估 → 待实际应用输出 → 待首次综合评估 → 待 Distill → 待新旧 Concept Note 双向关系 → 待 Quest–Concept 双向链接 → 待 Topic Map”的顺序，为最早未执行阶段创建 `continue`、`distill`、`link-knowledge` 或 `topic-map` 动作。阻塞暂存动作的展示命令使用 `/defer-concept resume <ID>`；评估已有结果但带缺口时不创建补测动作。
 2. **继续或延伸**：上述教学与晋升阶段都已完成时，Quest 未完成使用 `continue`；已完成且确有相邻目标时使用 `extend`。
 3. **复习**：还有名额且存在掌握证据时才创建 `review` 动作。
 
-辅助暂存概念不自动占用原 Quest 的两个主要未来动作名额，也不进入复习队列；它始终可从 `/skill:defer-concept list` 找回。阻塞暂存概念只占用一个必要的恢复动作，不同时制造重复 `continue` 或 `extend`。
+辅助暂存概念不自动占用原 Quest 的两个主要未来动作名额，也不进入复习队列；它始终可从 `/defer-concept list` 找回。阻塞暂存概念只占用一个必要的恢复动作，不同时制造重复 `continue` 或 `extend`。
 
 `defer-concept resume` 创建的正式依赖 Quest 必须保存 `originDeferredConceptId` 和返回目标。该 Quest 完成后，为仍有效的阻塞来源合并创建“返回 `<原 Quest>/<原节点>`”的 `continue` 动作；不要自动验证原节点。辅助来源不强迫用户返回已经完成的原 Quest。
 
@@ -152,13 +152,13 @@ Quest ID：<ID>
 
 以后可执行：
 1. <完成待节点评估/实际应用输出/综合评估/Distill/Topic Map，或继续当前路径/延伸主题>
-   /skill:learning-hub <continue|extend> <ID> 或 /skill:distill <节点>
+   /learning-hub <continue|extend> <ID> 或 /distill <节点>
 2. 复习已掌握内容
-   /skill:learning-hub review <ID>
+   /learning-hub review <ID>
 
 待学习概念：<数量；没有则写“暂无”>
 - [<阻塞|辅助|恢复中>] <Deferred ID> <概念> — <来源 Quest/节点>
-  /skill:defer-concept resume <Deferred ID>
+  /defer-concept resume <Deferred ID>
 
 现在不需要选择，状态已经保存。
 ```
@@ -167,6 +167,6 @@ Quest ID：<ID>
 
 ## 新 Quest 与旧待办
 
-用户开始新学习时照常激活新 Quest，旧 Quest、旧动作和暂存概念不得被覆盖。每个新学习会话最多低干扰提醒一次：仍有多少旧 Quest 包含待办、多少个暂存概念尚未处理（其中多少为辅助知识），以及可用 `/skill:learning-hub list` 查看。不要强迫用户先清空旧待办，也不要每轮重复提醒。
+用户开始新学习时照常激活新 Quest，旧 Quest、旧动作和暂存概念不得被覆盖。每个新学习会话最多低干扰提醒一次：仍有多少旧 Quest 包含待办、多少个暂存概念尚未处理（其中多少为辅助知识），以及可用 `/learning-hub list` 查看。不要强迫用户先清空旧待办，也不要每轮重复提醒。
 
 动作完成、取消、被新计划替代或 Quest 归档时及时更新状态。同一 Quest、同一目标的重复动作应合并；收件箱变大时只在用户查看或明确整理时提议取消、合并或归档，不自动丢弃。

@@ -86,13 +86,13 @@ test("--no-state behavior leaves state files absent", async (t) => {
   await assert.rejects(readFile(path.join(root, ".learning", "learning-progress.json")));
 });
 
-test("filesystem roots and .pi directories are rejected", async () => {
+test("filesystem roots and .dsh directories are rejected", async () => {
   await assert.rejects(
     initializeVault({ root: path.parse(process.cwd()).root, dryRun: true }),
     /文件系统根目录/,
   );
   await assert.rejects(
-    initializeVault({ root: path.join(process.cwd(), ".pi"), dryRun: true }),
-    /不是 .pi 目录/,
+    initializeVault({ root: path.join(process.cwd(), ".dsh"), dryRun: true }),
+    /不是 .dsh 目录/,
   );
 });
